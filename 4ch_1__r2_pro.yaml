@@ -1,0 +1,12 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: relay4ch_1
+
+  relay1: Blue
+  relay2: Red
+  relay3: FarRed
+  relay4: UVC
+
+<<: !include include/sonoff_4ch_r2.yaml

@@ -1,0 +1,32 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: loopback
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+  includes:
+    - loopback.h
+
+logger:
+  baud_rate: 0
+
+status_led:
+  pin:
+    number: LED
+    inverted: yes
+
+uart:
+  id: uart_bus
+  tx_pin: TX
+  rx_pin: RX
+  baud_rate: 9600
+
+custom_component:
+- lambda: |-
+    auto lb = new LoopbackComponent(id(uart_bus));
+    return {lb};

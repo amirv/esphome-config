@@ -1,0 +1,62 @@
+#!/bin/sh
+
+# scp /home/amirv/.platformio/packages/framework-arduinoespressif32/tools/sdk/bin/bootloader_dio_40m.bin /home/amirv/tkv/git/rpi/config/esphome/modbus/.pioenvs/modbus/partitions.bin /home/amirv/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin modbus/.pioenvs/modbus/firmware.bin tkv-ephy3:/tmp/
+
+# tkv@hass-22e1:~ $ esptool.py --chip esp32 --port /dev/serial/by-id/usb-Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller_01DB0D69-if00-port0 --baud 115200 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 /tmp//bootloader_dio_40m.bin 0x8000 /tmp//partitions.bin 0xe000 /tmp/boot_app0.bin 0x10000 /tmp/firmware.bin
+
+
+
+
+#PORT=8266
+#PORT=3232
+
+if [ $# -lt 4 ]; then
+	echo "Usage:"
+	echo "  $0 <remote device ip> <rpi ip> <config> <cmd> ..."
+	exit 1;
+fi
+
+IP=$1; shift
+RPI=$1; shift
+
+CONFIG=$1; shift
+CMD=$1; shift
+
+tmpfile=`mktemp /tmp/XXXX.yaml`
+esphome config $CONFIG | tail -n +1 > $tmpfile
+PORT=`yq e .ota.port $tmpfile`
+if [ z"$IP" == z"auto" ]; then
+	IP=`yq e .esphome.name $tmpfile`.local
+fi
+rm $tmpfile
+
+echo port: $PORT
+echo ip: $IP
+
+#ssh $RPI -O exit
+
+if ( sudo netstat -ntpl | grep ":\($PORT\|6053\)" ); then
+	echo "A tunnel is already open - can't do";
+	exit 1;
+fi
+
+ssh -o ControlPath=~/.ssh/sockets/tkv-%r@%h-%p -o ControlMaster=no -o ExitOnForwardFailure=yes -f -L $PORT:$IP:$PORT -L 6053:$IP:6053 $RPI sleep 5
+
+until ( sudo netstat -ntpl | grep ":\($PORT\|6053\)" ); do
+	echo "Waiting"
+	sleep 1;
+done
+
+EXTRA=""
+case $CMD in
+	upload|run)
+		EXTRA+="--device 127.0.0.1"
+		;;
+
+	logs)
+		EXTRA+="--device 127.0.0.1"
+		;;
+
+esac
+
+esphome $CMD $CONFIG $EXTRA $*

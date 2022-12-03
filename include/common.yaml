@@ -1,0 +1,52 @@
+esphome:
+  build_path: "obj/${device}"
+
+logger:
+  level: DEBUG
+
+wifi:
+  networks:
+  - ssid: !secret tkv_ssid
+    password: !secret tkv_password
+    priority: 10
+  - ssid: !secret other_ssid
+    password: !secret other_password
+    priority: 5
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ${device} Hotspot
+    password: !secret ap_password
+
+captive_portal:
+
+api:
+
+ota:
+
+web_server:
+  port: 80
+
+switch:
+  - platform: restart
+    name: ${device} Restart
+
+sensor:
+  - platform: wifi_signal
+    name: ${device} Wifi Signal
+    update_interval: 60s
+  - platform: uptime
+    name: ${device} Uptime
+  
+text_sensor:
+  - platform: version
+    name: ${device} ESPHomelib Version
+    id: version_esphomelib
+  - platform: wifi_info
+    ip_address:
+      name: ${device} IP Address
+    ssid:
+      name: ${device} Connected SSID
+    bssid:
+      name: ${device} Connected BSSID
+

@@ -1,0 +1,482 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: faucet
+  grove_addr_1: "32"
+  grove_addr_2: "33"
+  debounce: "100ms"
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: esp32dev
+
+  includes:
+    - grove/multi_channel_relay.cpp
+    - grove/multi_channel_relay.h
+    - grove.h
+    - faucet.h
+
+  on_boot:
+    priority: -200
+    then:
+      - lambda: id(hw_initialized) = true;
+      - lambda: faucet_update_status(id(valve_open_1), id(valve_closed_1), id(valve_state_1), id(valve1), id(script_do_open_1), id(script_do_close_1));
+      - lambda: faucet_update_status(id(valve_open_2), id(valve_closed_2), id(valve_state_2), id(valve2), id(script_do_open_2), id(script_do_close_2));
+      - lambda: faucet_update_status(id(valve_open_3), id(valve_closed_3), id(valve_state_3), id(valve3), id(script_do_open_3), id(script_do_close_3));
+      - lambda: faucet_update_status(id(valve_open_4), id(valve_closed_4), id(valve_state_4), id(valve4), id(script_do_open_4), id(script_do_close_4));
+
+api:
+  services:
+    - service: valve_1
+      variables:
+        to_open: bool
+      then:
+        - lambda: |-
+            if (to_open)
+              id(script_do_open_1).execute();
+            else
+              id(script_do_close_1).execute();
+
+    - service: valve_2
+      variables:
+        to_open: bool
+      then:
+        - lambda: |-
+            if (to_open)
+              id(script_do_open_2).execute();
+            else
+              id(script_do_close_2).execute();
+
+    - service: valve_3
+      variables:
+        to_open: bool
+      then:
+        - lambda: |-
+            if (to_open)
+              id(script_do_open_3).execute();
+            else
+              id(script_do_close_3).execute();
+
+    - service: valve_4
+      variables:
+        to_open: bool
+      then:
+        - lambda: |-
+            if (to_open)
+              id(script_do_open_4).execute();
+            else
+              id(script_do_close_4).execute();
+
+globals:
+  - id: hw_initialized
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+i2c:
+  sda: GPIO16
+  scl: GPIO17
+  scan: True
+  id: bus_a
+
+script:
+  - id: scan_i2c
+    then:
+      - lambda: scanI2CDevice(id(i2c_addr));
+
+  - id: script_power_1
+    mode: restart
+    then:
+      - logger.log: power faucet 1
+      - switch.turn_on: relay_power_1
+      - delay: 60s
+      - switch.turn_off: relay_power_1
+
+  - id: script_power_update_1
+    mode: restart
+    then:
+      - logger.log: script_power_update_1
+      - lambda: faucet_update_status(id(valve_open_1), id(valve_closed_1), id(valve_state_1));
+      - if:
+          condition:
+            - or:
+              - binary_sensor.is_on: valve_open_1
+              - binary_sensor.is_on: valve_closed_1
+          then:
+            - script.stop: script_power_1
+            - switch.turn_off: relay_power_1
+
+  - id: script_power_2
+    mode: restart
+    then:
+      - logger.log: power faucet 2
+      - switch.turn_on: relay_power_2
+      - delay: 60s
+      - switch.turn_off: relay_power_2
+
+  - id: script_power_update_2
+    mode: restart
+    then:
+      - logger.log: script_power_update_2
+      - lambda: faucet_update_status(id(valve_open_2), id(valve_closed_2), id(valve_state_2));
+      - if:
+          condition:
+            - or:
+              - binary_sensor.is_on: valve_open_2
+              - binary_sensor.is_on: valve_closed_2
+          then:
+            - script.stop: script_power_2
+            - switch.turn_off: relay_power_2
+
+  - id: script_power_3
+    mode: restart
+    then:
+      - logger.log: power faucet 3
+      - switch.turn_on: relay_power_3
+      - delay: 60s
+      - switch.turn_off: relay_power_3
+
+  - id: script_power_update_3
+    mode: restart
+    then:
+      - logger.log: script_power_update_3
+      - lambda: faucet_update_status(id(valve_open_3), id(valve_closed_3), id(valve_state_3));
+      - if:
+          condition:
+            - or:
+              - binary_sensor.is_on: valve_open_3
+              - binary_sensor.is_on: valve_closed_3
+          then:
+            - script.stop: script_power_3
+            - switch.turn_off: relay_power_3
+
+  - id: script_power_4
+    mode: restart
+    then:
+      - logger.log: power faucet 4
+      - switch.turn_on: relay_power_4
+      - delay: 60s
+      - switch.turn_off: relay_power_4
+
+  - id: script_power_update_4
+    mode: restart
+    then:
+      - logger.log: script_power_update_4
+      - lambda: faucet_update_status(id(valve_open_4), id(valve_closed_4), id(valve_state_4));
+      - if:
+          condition:
+            - or:
+              - binary_sensor.is_on: valve_open_4
+              - binary_sensor.is_on: valve_closed_4
+          then:
+            - script.stop: script_power_4
+            - switch.turn_off: relay_power_4
+
+
+  - id: script_do_open_1
+    then:
+      - if:
+          condition:
+            lambda: return id(hw_initialized);
+          then:
+            - script.stop: script_power_1
+            - switch.turn_off: relay_dir_1
+            - delay: 1s
+            - script.execute: script_power_1
+  - id: script_do_close_1
+    then:
+      - if:
+          condition:
+            lambda: return id(hw_initialized);
+          then:
+            - script.stop: script_power_1
+            - switch.turn_on: relay_dir_1
+            - delay: 1s
+            - script.execute: script_power_1
+
+  - id: script_do_open_2
+    then:
+      - if:
+          condition:
+            lambda: return id(hw_initialized);
+          then:
+            - script.stop: script_power_2
+            - switch.turn_off: relay_dir_2
+            - delay: 1s
+            - script.execute: script_power_2
+  - id: script_do_close_2
+    then:
+      - if:
+          condition:
+            lambda: return id(hw_initialized);
+          then:
+            - script.stop: script_power_2
+            - switch.turn_on: relay_dir_2
+            - delay: 1s
+            - script.execute: script_power_2
+
+  - id: script_do_open_3
+    then:
+      - if:
+          condition:
+            lambda: return id(hw_initialized);
+          then:
+            - script.stop: script_power_3
+            - switch.turn_off: relay_dir_3
+            - delay: 1s
+            - script.execute: script_power_3
+  - id: script_do_close_3
+    then:
+      - if:
+          condition:
+            lambda: return id(hw_initialized);
+          then:
+            - script.stop: script_power_3
+            - switch.turn_on: relay_dir_3
+            - delay: 1s
+            - script.execute: script_power_3
+
+  - id: script_do_open_4
+    then:
+      - if:
+          condition:
+            lambda: return id(hw_initialized);
+          then:
+            - script.stop: script_power_4
+            - switch.turn_off: relay_dir_4
+            - delay: 1s
+            - script.execute: script_power_4
+  - id: script_do_close_4
+    then:
+      - if:
+          condition:
+            lambda: return id(hw_initialized);
+          then:
+            - script.stop: script_power_4
+            - switch.turn_on: relay_dir_4
+            - delay: 1s
+            - script.execute: script_power_4
+
+switch:
+  - platform: template
+    name: "${device} valve 1"
+    optimistic: true
+    id: valve1
+    restore_state: true
+    turn_on_action:
+      - script.execute: script_do_open_1
+    turn_off_action:
+      - script.execute: script_do_close_1
+
+  - platform: template
+    name: "${device} valve 2"
+    optimistic: true
+    id: valve2
+    restore_state: true
+    turn_on_action:
+      - script.execute: script_do_open_2
+    turn_off_action:
+      - script.execute: script_do_close_2
+
+  - platform: template
+    name: "${device} valve 3"
+    optimistic: true
+    id: valve3
+    restore_state: true
+    turn_on_action:
+      - script.execute: script_do_open_3
+    turn_off_action:
+      - script.execute: script_do_close_3
+
+  - platform: template
+    name: "${device} valve 4"
+    optimistic: true
+    id: valve4
+    restore_state: true
+    turn_on_action:
+      - script.execute: script_do_open_4
+    turn_off_action:
+      - script.execute: script_do_close_4
+
+  - platform: custom
+    lambda: |-
+      auto grove = new GroveRelays(${grove_addr_1});
+      App.register_component(grove);
+      return {&grove->relay1, &grove->relay2, &grove->relay3, &grove->relay4};
+    switches:
+      - name: "${device} direction 1"
+        id: relay_dir_1
+      - name: "${device} power 1"
+        id: relay_power_1
+      - name: "${device} direction 2"
+        id: relay_dir_2
+      - name: "${device} power 2"
+        id: relay_power_2
+
+  - platform: custom
+    lambda: |-
+      auto grove = new GroveRelays(${grove_addr_2});
+      App.register_component(grove);
+      return {&grove->relay1, &grove->relay2, &grove->relay3, &grove->relay4};
+    switches:
+      - name: "${device} direction 3"
+        id: relay_dir_3
+      - name: "${device} power 3"
+        id: relay_power_3
+      - name: "${device} direction 4"
+        id: relay_dir_4
+      - name: "${device} power 4"
+        id: relay_power_4
+
+button:
+  - platform: template
+    name: "${device} scan i2c address"
+    on_press:  
+      - script.execute: scan_i2c
+
+  - platform: template
+    name: "${device} set grove 1 addr"
+    on_press:  
+      - lambda: |-
+          Multi_Channel_Relay mcr;
+          uint8_t addr = mcr.scanI2CDevice();
+          mcr.changeI2CAddress(addr, ${grove_addr_1});
+      - script.execute: scan_i2c
+
+  - platform: template
+    name: "${device} set grove 2 addr"
+    on_press:  
+      - lambda: |-
+          Multi_Channel_Relay mcr;
+          uint8_t addr = mcr.scanI2CDevice();
+          mcr.changeI2CAddress(addr, ${grove_addr_2});
+      - script.execute: scan_i2c
+
+text_sensor:
+  - platform: template
+    name: "${device} scanned i2c address"
+    id: i2c_addr
+
+  - platform: template
+    name: "${device} valve 1 state"
+    id: valve_state_1
+
+  - platform: template
+    name: "${device} valve 2 state"
+    id: valve_state_2
+
+  - platform: template
+    name: "${device} valve 3 state"
+    id: valve_state_3
+
+  - platform: template
+    name: "${device} valve 4 state"
+    id: valve_state_4
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      inverted: true
+      number: GPIO27
+    filters:
+      - delayed_on: ${debounce}
+    name: "${device} valve 1 open"
+    id: valve_open_1
+    on_press:
+      - script.execute: script_power_update_1
+    on_release:
+      - lambda: faucet_update_status(id(valve_open_1), id(valve_closed_1), id(valve_state_1));
+  - platform: gpio
+    pin:
+      inverted: true
+      number: GPIO14
+    filters:
+      - delayed_on: ${debounce}
+    name: "${device} valve 1 closed"
+    id: valve_closed_1
+    on_press:
+      - script.execute: script_power_update_1
+    on_release:
+      - lambda: faucet_update_status(id(valve_open_1), id(valve_closed_1), id(valve_state_1));
+
+  - platform: gpio
+    pin:
+      inverted: true
+      number: GPIO05
+    filters:
+      - delayed_on: ${debounce}
+    name: "${device} valve 2 open"
+    id: valve_open_2
+    on_press:
+      - script.execute: script_power_update_2
+    on_release:
+      - lambda: faucet_update_status(id(valve_open_2), id(valve_closed_2), id(valve_state_2));
+  - platform: gpio
+    pin:
+      inverted: true
+      number: GPIO21
+    filters:
+      - delayed_on: ${debounce}
+    name: "${device} valve 2 closed"
+    id: valve_closed_2
+    on_press:
+      - script.execute: script_power_update_2
+    on_release:
+      - lambda: faucet_update_status(id(valve_open_2), id(valve_closed_2), id(valve_state_2));
+
+  - platform: gpio
+    pin:
+      inverted: true
+      number: GPIO35
+    filters:
+      - delayed_on: ${debounce}
+    name: "${device} valve 3 open"
+    id: valve_open_3
+    on_press:
+      - script.execute: script_power_update_3
+    on_release:
+      - lambda: faucet_update_status(id(valve_open_3), id(valve_closed_3), id(valve_state_3));
+
+  - platform: gpio
+    pin:
+      inverted: true
+      number: GPIO13
+    filters:
+      - delayed_on: ${debounce}
+    name: "${device} valve 3 closed"
+    id: valve_closed_3
+    on_press:
+      - script.execute: script_power_update_3
+    on_release:
+      - lambda: faucet_update_status(id(valve_open_3), id(valve_closed_3), id(valve_state_3));
+
+  - platform: gpio
+    pin:
+      inverted: true
+      number: GPIO18
+    filters:
+      - delayed_on: ${debounce}
+    name: "${device} valve 4 open"
+    id: valve_open_4
+    on_press:
+      - script.execute: script_power_update_4
+    on_release:
+      - lambda: faucet_update_status(id(valve_open_4), id(valve_closed_4), id(valve_state_4));
+  - platform: gpio
+    pin:
+      inverted: true
+      number: GPIO36
+    filters:
+      - delayed_on: ${debounce}
+    name: "${device} valve 4 closed"
+    id: valve_closed_4
+    on_press:
+      - script.execute: script_power_update_4
+    on_release:
+      - lambda: faucet_update_status(id(valve_open_4), id(valve_closed_4), id(valve_state_4));
+
+status_led:
+  pin:
+    number: GPIO23

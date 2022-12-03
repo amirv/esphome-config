@@ -1,0 +1,133 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: weight
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+  includes:
+    - uart_read_line_sensor.h
+      
+logger:
+  level: VERBOSE
+
+uart:
+  id: uart_bus
+  tx_pin: GPIO33
+  rx_pin: GPIO34
+  baud_rate: 9600
+
+text_sensor:
+  - platform: custom
+    lambda: |-
+      auto my_custom_sensor = new UartReadLineSensor(id(uart_bus));
+      App.register_component(my_custom_sensor);
+      return {my_custom_sensor};
+    text_sensors:
+      name: "Last UART line"
+      id: "uart_readline"
+      on_value:
+        then:
+          - lambda: |-
+              if (x.length() < 5 or x[0] != 'w') // e.g.: wn000000.0kg
+                return;
+
+              char *units;
+              float val = strtof(&x[2], &units);
+
+              switch (x[1]) {
+                case 'w': {
+                  static float wg = -1;
+                  if (wg != val) {
+                    id(gross_weight).publish_state(val);
+                    wg = val;
+                  }
+                  break;
+                }
+
+                case 'n': {
+                  static float wn = -1;
+                  if (wn != val) {
+                    id(net_weight).publish_state(val);
+                    wn = val;
+                  }
+                  break;
+                }
+
+                case 't': {
+                  static float wt = -1;
+                  if (wt != val) {
+                    id(tare_weight).publish_state(val);
+                    wt = val;
+                  }
+                  break;
+                }
+                default: return;
+              };
+
+time:
+  - platform: sntp
+    id: sntp_time
+
+sensor:
+  - platform: template
+    name: ${device} Gross Weight
+    id: gross_weight
+    unit_of_measurement: 'kg'
+    icon: mdi:weight-kilogram
+    accuracy_decimals: 2
+
+  - platform: template
+    name: ${device} Net Weight
+    id: net_weight
+    unit_of_measurement: 'kg'
+    icon: mdi:weight-kilogram
+    accuracy_decimals: 2
+
+  - platform: template
+    name: ${device} Tare Weight
+    id: tare_weight
+    unit_of_measurement: 'kg'
+    icon: mdi:weight-kilogram
+    accuracy_decimals: 2
+
+  - platform: template
+    name: ${device} Net Flow
+    unit_of_measurement: 'kg/min'
+    lambda: |-
+      static float last_value = 0;
+      static auto last_ts = id(sntp_time).now().timestamp;
+      auto now = id(sntp_time).now().timestamp;
+      
+      float weight = id(net_weight).state;
+
+      auto duration = now - last_ts;
+      float delta = duration > 0 ? (weight - last_value) * (60 / duration) * 60 : 0;
+
+      last_value = weight;
+      last_ts = now;
+
+      return delta;
+
+api:
+  services:
+    - service: tare
+      then:
+        - uart.write: "T"
+        - delay: 1s
+        - uart.write: "R"
+    - service: zero
+      then:
+        - uart.write: "Z"
+
+
+interval:
+  - interval: 15s
+    then:
+      - uart.write:
+          id: uart_bus
+          data: "R"      

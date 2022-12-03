@@ -1,0 +1,124 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: "intervals"
+  
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+<<: !include include/common.yaml
+    
+logger:
+  level: DEBUG
+  #baud_rate: 0
+
+web_server:
+  port: 80
+
+status_led:
+  pin: LED
+
+sensor:
+  - platform: wifi_signal
+    name: ${device} Wifi Signal
+    update_interval: 60s
+  - platform: uptime
+    name: ${device} Uptime
+    update_interval: 10s
+
+text_sensor:
+  - platform: version
+    name: ${device} ESPHomelib Version
+    id: version_esphomelib
+  - platform: wifi_info
+    ip_address:
+      name: ${device} IP Address
+    ssid:
+      name: ${device} Connected SSID
+    bssid:
+      name: ${device} Connected BSSID
+
+globals:
+  - id: fwd_interval
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+switch:
+  - platform: template
+    name: ${device} STOP
+    optimistic: true
+    turn_on_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "STOP PRESSED");
+
+  - platform: template
+    name: ${device} FORWARD
+    optimistic: true
+    id: forward
+    turn_on_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "FORWARD PRESSED");
+    turn_off_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "FORWARD PRESSED");
+        
+  - platform: template
+    name: ${device} BACKWARD
+    optimistic: true
+    turn_on_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "BACKWARD PRESSED");
+
+  - platform: template
+    name: ${device} FORWARD interval
+    optimistic: true
+    turn_on_action:
+      - while:
+          condition:
+            lambda: return true;
+          then:
+            - switch.template.publish:
+                id: forward
+                state: ON
+            - delay: 2s
+            - switch.template.publish:
+                id: forward
+                state: OFF
+            - delay: 1s
+    turn_off_action:
+      - switch.template.publish:
+          id: forward
+          state: OFF
+
+script:
+  - id: fwd_interval_new
+    mode: single
+    then:
+      - while:
+          condition:
+            lambda: return true;
+          then:
+            - logger.log: "running"
+            - switch.template.publish:
+                id: forward
+                state: ON
+            - delay: 2s
+            - switch.template.publish:
+                id: forward
+                state: OFF
+            - delay: 1s
+
+#interval:
+#  - interval: 5s
+#    then:
+#      - lambda: ESP_LOGW("XXXX", "Interval forward %d", id(forward).state);
+#      - if:
+#          condition:
+#            lambda: return id(fwd_interval);
+#          then:
+#            - lambda: ESP_LOGW("XXXX", "FORWARD TOGGLE");
+#            - switch.toggle: forward

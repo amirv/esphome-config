@@ -1,0 +1,300 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: burner
+
+esphome:
+  name: ${device}
+#  platform: ESP8266
+#  board: esp12e
+  platform: ESP32
+  board: wemos_d1_mini32
+
+  includes:
+    - grove/multi_channel_relay.cpp
+    - grove/multi_channel_relay.h
+    - grove.h
+
+status_led:
+  pin:
+    number: LED
+    inverted: yes
+
+i2c:
+  sda: SDA
+  scl: SCL
+  scan: True
+  id: bus_a
+
+spi:
+  # See pingout of esp12e at https://components101.com/wireless/esp12e-pinout-datasheet
+    mosi_pin: GPIO13
+    miso_pin: GPIO12
+    clk_pin: GPIO14
+
+globals:
+  - id: last_temp_change
+    type: long int
+    restore_value: no
+    initial_value: '1'
+
+binary_sensor:
+  - platform: template
+    id: warning_sensor # Temperature sensor didn't move more than 60 seconds
+    name: "${device} sensor warning"
+    icon: mdi:alert
+
+  - platform: template
+    id: alarm_sensor # Temperature sensor didn't move more than 4 minutes
+    name: "${device} sensor alarm"
+    icon: mdi:alert
+    on_press:
+      - script.execute: alert_start
+    on_release:
+      - script.execute: alert_end
+
+  - platform: template
+    id: shutdown_alert # Temperature reached safety temperature
+    name: "${device} shutdown temp reached"
+    icon: mdi:alert
+    on_press:
+      - script.execute: alert_start
+    on_release:
+      - script.execute: alert_end
+
+script:
+- id: check_heater_relay
+  then:
+    if:
+      condition:
+        and:
+          - switch.is_off: relay_oil1
+          - switch.is_off: relay_oil2
+      then:
+        switch.turn_off: relay_heater_internal
+
+- id: alert_start
+  then:
+    - switch.turn_off: heater_relay
+    - switch.turn_on: alarm_relay
+
+- id: alert_end
+  then:
+    - switch.turn_off: alarm_relay
+
+- id: check_temp
+  then:
+    - if:
+        condition:
+          - lambda: |-
+              ESP_LOGW("debug", "temp: %f cond: %d", id(temp).state, id(temp).state != 999);
+              return (id(temp).state < 999) && (id(temp).state >= id(shutdown_temp).state);
+        then:
+          - binary_sensor.template.publish:
+              id: shutdown_alert
+              state: ON
+        else:
+          - binary_sensor.template.publish:
+              id: shutdown_alert
+              state: OFF
+    - if:
+        condition:
+          and:
+            - switch.is_on: automation
+            - lambda: return (id(temp).state > id(hi_watermark).state);
+        then:
+          - switch.turn_off: heater_relay
+    - if:
+        condition:
+          and:
+            - switch.is_on: automation
+            - lambda: return (id(temp).state < id(lo_watermark).state);
+        then:
+          - switch.turn_on: heater_relay
+
+- id: check_sensor
+  then:
+    - if:
+        condition:
+          and:
+            - switch.is_on: heater_relay
+            - lambda: |-
+                unsigned long now = id(sntp_time).now().timestamp;
+                unsigned long last = id(last_temp_change);
+                unsigned long secs = now - last;
+
+                if (!last)
+                  return false;
+
+                ESP_LOGW("debug", "temp: %f nan: %d secs: %ld", id(temp).state, isnan(id(temp).state), secs);
+                if ((id(temp).state >= 999) && (secs >= 10))
+                  return true;
+
+                unsigned long max = (unsigned long)id(sensor_alert_sec).state;
+
+                if (!max)
+                  return false;
+
+                return secs >= max;
+        then:
+          - binary_sensor.template.publish:
+              id: alarm_sensor
+              state: ON
+        else:
+          - if:
+              condition:
+                and:
+                  - switch.is_on: heater_relay
+                  - lambda: |-
+                      unsigned long now = id(sntp_time).now().timestamp;
+                      unsigned long last = id(last_temp_change);
+                      unsigned long max = (unsigned long)id(sensor_warn_sec).state;
+                      return max > 0 && last > 0 && (now - last) >= max;
+              then:
+                - binary_sensor.template.publish:
+                    id: warning_sensor
+                    state: ON
+
+sensor:
+  - platform: max31865
+    name: "${device} Temperature"
+    id: temp
+    cs_pin: GPIO15
+    reference_resistance: 430 Ω
+    rtd_nominal_resistance: 100 Ω
+    update_interval: 500ms
+      #mains_filter: 50HZ
+      #rtd_wires: 3
+
+    filters:
+      - lambda: |-
+          return isnan(x) ? 999 : x;
+      - delta: .1
+    on_value:
+      then:
+        - script.execute: check_temp
+        - lambda: |-
+            id(last_temp_change) = id(sntp_time).now().timestamp;
+        - binary_sensor.template.publish:
+            id: warning_sensor
+            state: OFF
+        - binary_sensor.template.publish:
+            id: alarm_sensor
+            state: OFF
+
+time:
+  - platform: sntp
+    id: sntp_time
+
+interval:
+  - interval: 10s
+    then:
+      - script.execute: check_sensor
+
+switch:
+  - platform: template
+    name: ${device} Automation
+    optimistic: true
+    id: automation
+    turn_off_action:
+      - switch.turn_off: heater_relay
+    turn_on_action:
+      - script.execute: check_temp
+
+  - platform: template
+    name: ${device} Heater
+    id: heater_relay
+
+    optimistic: true
+    lambda: return id(relay_heater_internal).state;
+    turn_on_action:
+      if:
+        condition:
+          or:
+            - switch.is_on: relay_oil1
+            - switch.is_on: relay_oil2
+        then:
+          - switch.turn_on: relay_heater_internal
+    turn_off_action:
+      - switch.turn_off: relay_heater_internal
+
+  - platform: custom
+    lambda: |-
+      auto grove = new GroveRelays(0x11);
+      App.register_component(grove);
+      return {&grove->relay1, &grove->relay2, &grove->relay3, &grove->relay4};
+    switches:
+      - name: "${device} External Alarm"
+        id: alarm_relay
+        internal: False
+      - name: "${device} Heater internal"
+        id: relay_heater_internal
+        internal: True
+      - name: "${device} Oil Pump 1"
+        id: relay_oil1
+        internal: False
+        on_turn_off:
+          script.execute: check_heater_relay
+      - name: "${device} Oil Pump 2"
+        id: relay_oil2
+        internal: False
+        on_turn_off:
+          script.execute: check_heater_relay
+
+number:
+  - platform: template
+    name: ${device} Sensor Warning Seconds
+    id: sensor_warn_sec
+    min_value: 0
+    max_value: 300
+    step: 1
+    restore_value: true
+    optimistic: true
+    initial_value: 60
+
+  - platform: template
+    name: ${device} Sensor Alert Seconds
+    id: sensor_alert_sec
+    min_value: 0
+    max_value: 300
+    step: 1
+    restore_value: true
+    optimistic: true
+    initial_value: 240
+
+  - platform: template
+    name: ${device} LOW watermark
+    id: lo_watermark
+    min_value: 0
+    max_value: 300
+    step: 1
+    restore_value: true
+    optimistic: true
+    on_value:
+      then:
+        - script.execute: check_temp
+
+  - platform: template
+    name: ${device} HIGH watermark
+    id: hi_watermark
+    min_value: 0
+    max_value: 300
+    step: 1
+    restore_value: true
+    optimistic: true
+    on_value:
+      then:
+        - script.execute: check_temp
+
+  - platform: template
+    name: ${device} SHUTDOWN watermark
+    id: shutdown_temp
+    min_value: 0
+    max_value: 300
+    step: 1
+    restore_value: true
+    optimistic: true
+    on_value:
+      then:
+        - script.execute: check_temp

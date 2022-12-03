@@ -1,0 +1,59 @@
+packages:
+  - include/common.yaml
+
+logger:
+  baud_rate: 0
+
+substitutions:
+  device: modbus-tester
+    
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+api:
+
+status_led:
+  pin:
+    number: GPIO23
+    inverted: yes
+
+uart:
+  - id: mod_bus
+    rx_pin:
+        number: GPIO32
+        inverted: false
+        #mode: OUTPUT_OPEN_DRAIN
+        #drive_strength: 40
+    tx_pin:
+        number: GPIO33
+        inverted: false
+    baud_rate: 9600
+    stop_bits: 1
+    debug:
+      direction: BOTH
+      after:
+        bytes: 1
+
+switch:
+  - platform: gpio
+    name: flow_control_pin
+    pin:
+        number: GPIO19
+
+  - platform: template
+    name: tx
+    id: tx_enable
+    optimistic: true
+
+
+interval:
+  - interval: 1sec
+    then:
+      - if:
+          condition:
+            switch.is_on: tx_enable
+          then:  
+            - uart.write: [ 0x0e, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0xf5 ]
+

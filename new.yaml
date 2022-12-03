@@ -1,0 +1,21 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: "new"
+
+<<: !include include/esp32.yaml
+
+logger:
+
+binary_sensor:
+  - platform: status
+    name: ${device} Status
+
+status_led:
+  pin:
+    number: LED
+
+web_server:
+  port: 80
+    

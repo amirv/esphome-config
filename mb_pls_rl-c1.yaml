@@ -1,0 +1,136 @@
+substitutions:
+  device: mb-pls-rl-c1
+    
+packages:
+  - include/common.yaml
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+status_led:
+  pin:
+    number: GPIO23
+    inverted: no
+
+uart:
+  id: mod_bus
+  rx_pin: GPIO32
+  tx_pin: GPIO33
+  baud_rate: 9600
+  stop_bits: 1
+  debug:
+    direction: BOTH
+    after:
+      bytes: 1
+
+modbus:
+  send_wait_time: 1000ms
+  uart_id: mod_bus
+  id: mod_bus_1
+  flow_control_pin:
+    number: GPIO19
+    #inverted: true
+
+modbus_controller:
+  id: modbus_hub
+  address: 12
+  modbus_id: mod_bus_1
+  command_throttle: 2000ms
+  setup_priority: -10  
+  update_interval: 10s
+
+sensor:
+  - platform: modbus_controller
+    name: "${device} test"
+    address: 0
+    register_type: holding
+    value_type: U_WORD
+    #accuracy_decimals: 2
+
+#  - platform: modbus_controller
+#    name: "${device} gas"
+#    address: 0
+#    register_type: read
+#    value_type: FP32_R
+#    accuracy_decimals: 2
+#
+#    lambda: |-
+#      ESP_LOGI("","Lambda incoming value=%f - data array size is %d",x,data.size());
+#      ESP_LOGI("","Sensor properties: adress = 0x%X, offset = 0x%X value type=%d", item->start_address, item->offset, (int)item->sensor_value_type);
+#      int i=0 ;
+#      for (auto val : data) {
+#        ESP_LOGI("","data[%d]=0x%02X (%d)", i, data[i], data[i]);
+#        i++;
+#      }
+#      return x ;    
+#
+#  - platform: modbus_controller
+#    name: "${device} temperature"
+#    unit_of_measurement: "°C"
+#    address: 1
+#    register_type: read
+#    value_type: FP32_R
+#    accuracy_decimals: 2
+#
+#  - platform: modbus_controller
+#    name: "${device} humidity"
+#    unit_of_measurement: "%"
+#    address: 2
+#    register_type: read
+#    value_type: FP32_R
+#    accuracy_decimals: 2
+
+  - platform: pulse_meter
+    pin:
+      number: GPIO35
+      mode: INPUT
+    name: "${device} Pulses Rate 1"
+    accuracy_decimals: 0
+    filters:
+    - lambda: return x;
+    id: pulser1
+    total:
+      name: "${device} Pulses 1"
+      accuracy_decimals: 0
+
+  - platform: pulse_meter
+    pin:
+      number: GPIO34
+      mode: INPUT
+    name: "${device} Pulses Rate 2"
+    accuracy_decimals: 0
+    filters:
+    - lambda: return x;
+    id: pulser2
+    total:
+      name: "${device} Pulses 2"
+      accuracy_decimals: 0
+
+button:
+  - platform: template
+    name: "Reset Pulses 1"
+    on_press:
+      then:
+      - pulse_meter.set_total_pulses:
+          id: pulser1
+          value: 0
+
+  - platform: template
+    name: "Reset Pulses 2"
+    on_press:
+      then:
+      - pulse_meter.set_total_pulses:
+          id: pulser2
+          value: 0
+
+switch:
+  - platform: gpio
+    name: relay1
+    pin: GPIO25
+
+  - platform: gpio
+    name: relay2
+    pin: GPIO26
+    

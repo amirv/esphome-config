@@ -1,0 +1,74 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: relay4ch_3
+
+  relay1: submerged_power
+  relay2: ozone_power
+  relay3: Camera
+  relay4: router
+
+<<: !include include/sonoff_common.yaml
+
+logger:
+
+binary_sensor:
+- platform: status
+  name: ${device} Status
+- platform: gpio
+  pin:
+    number: GPIO0
+    mode: INPUT_PULLUP
+    inverted: True
+  name: ${device} Button 1
+  on_press:
+    - switch.toggle: ${device}_${relay1}
+- platform: gpio
+  pin:
+    number: GPIO9
+    mode: INPUT_PULLUP
+    inverted: True
+  name: ${device} Button 2
+  on_press:
+    - switch.toggle: ${device}_${relay2}
+- platform: gpio
+  pin:
+    number: GPIO10
+    mode: INPUT_PULLUP
+    inverted: True
+  name: ${device} Button 3
+  on_press:
+    - switch.toggle: ${device}_${relay3}
+- platform: gpio
+  pin:
+    number: GPIO14
+    mode: INPUT_PULLUP
+    inverted: True
+  name: ${device} Button 4
+  on_press:
+    - switch.toggle: ${device}_${relay4}
+
+switch:
+- platform: gpio
+  name: ${device} ${relay1}
+  pin: GPIO12
+  id: ${device}_${relay1}
+- platform: gpio
+  name: ${device} ${relay2}
+  pin: GPIO5
+  id: ${device}_${relay2}
+- platform: gpio
+  name: ${device} ${relay3}
+  pin: GPIO4
+  id: ${device}_${relay3}
+- platform: gpio
+  name: ${device} ${relay4}
+  pin: GPIO15
+  id: ${device}_${relay4}
+  restore_mode: ALWAYS_ON
+
+status_led:
+  pin:
+    number: GPIO13
+    inverted: yes

@@ -1,0 +1,26 @@
+<<: !include sonoff_common.yaml
+
+logger:
+
+binary_sensor:
+  - platform: status
+    name: ${device} Status
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    name: ${device} Button
+    on_press:
+      - switch.toggle: ${device}_relay
+
+switch:
+  - platform: gpio
+    name: ${device} Relay
+    pin: GPIO12
+    id: ${device}_relay
+
+status_led:
+  pin:
+    number: GPIO13
+    inverted: yes

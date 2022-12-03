@@ -1,0 +1,8 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: ct40_10
+
+<<: !include include/ct.yaml
+

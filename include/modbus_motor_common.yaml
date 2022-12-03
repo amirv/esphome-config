@@ -1,0 +1,151 @@
+api:
+  services:
+    - service: queue_reset
+      then:
+        - lambda: |-
+            modbus_hub->queue_clear();
+
+number:
+  - platform: template
+    name: ${device} Frequency
+    id: admin_freq
+    min_value: 0
+    max_value: 100
+    step: 1
+    restore_value: true
+    set_action:
+      then:
+        - lambda: |-
+            queue_write_cmd(id(modbus_hub), 0x2001, x * 100);
+            id(modbus_hub).force_update();
+
+  - platform: template
+    name: ${device} ON duration
+    id: on_duration
+    min_value: 0
+    max_value: 100
+    step: 1
+    restore_value: true
+    optimistic: true
+
+  - platform: template
+    name: ${device} OFF duration
+    id: off_duration
+    min_value: 0
+    max_value: 100
+    step: 1
+    restore_value: true
+    optimistic: true
+
+sensor:
+  - platform: modbus_controller
+    id: "motor_status"
+    name: "${device} Motor Status"
+    address: 0x2100
+    offset: 2
+    register_type: read
+    value_type: U_WORD
+    internal: false
+    on_value:
+      then:
+        - component.update: ${device}_state
+
+  - platform: modbus_controller
+    id: ${device}_freq
+    name: "${device} frequency"
+    address: 0x2100
+    offset: 4
+    unit_of_measurement: "Hz"
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.01
+
+  - platform: modbus_controller
+    id: ${device}_current
+    name: "${device} current"
+    address: 0x2100
+    offset: 8
+    unit_of_measurement: "A"
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.1
+
+text_sensor:
+  - platform: template
+    id: ${device}_state
+    name: "${device} State"
+    lambda: return motor_status_str(motor_status_code_${motor}(id(motor_status).state));
+  
+switch:
+  - platform: template
+    name: ${device} STOP
+    id: stop
+    lambda: return motor_status_code_${motor}(id(motor_status).state) == MOTOR_STATUS_STOPPED;
+    turn_on_action:
+      lambda: |-
+        queue_write_cmd(id(modbus_hub), 0x2000, 0x1);
+        id(modbus_hub).force_update();
+
+  - platform: template
+    name: ${device} FORWARD
+    id: forward
+    lambda: return motor_status_code_${motor}(id(motor_status).state) == MOTOR_STATUS_FORWARD;
+    turn_on_action:
+      lambda: |-
+        queue_write_cmd(id(modbus_hub), 0x2000, 0x12);
+        id(modbus_hub).force_update();
+    
+  - platform: template
+    name: ${device} BACKWARD
+    id: backward
+    lambda: return motor_status_code_${motor}(id(motor_status).state) == MOTOR_STATUS_BACKWARD;
+    turn_on_action:
+      lambda: |-
+        queue_write_cmd(id(modbus_hub), 0x2000, 0x22);
+        id(modbus_hub).force_update();
+
+  - platform: template
+    name: ${device} FORWARD interval
+    optimistic: true
+    turn_on_action:
+      - while:
+          condition:
+            lambda: return true;
+          then:
+            - lambda: |-
+                ESP_LOGW("INTERVAL", "FORWARD - dur %f", id(on_duration).state);
+                queue_write_cmd(id(modbus_hub), 0x2000, 0x12);
+            - delay: !lambda "return (id(on_duration).state ?: 2) * 1000;"
+            - lambda: |-
+                ESP_LOGW("INTERVAL", "STOP - dur %f", id(off_duration).state);
+                queue_write_cmd(id(modbus_hub), 0x2000, 0x1);
+            - delay: !lambda "return (id(off_duration).state ?: 2) * 1000;"
+    turn_off_action:
+      - lambda: |-
+          ESP_LOGW("INTERVAL", "STOP");
+          queue_write_cmd(id(modbus_hub), 0x2000, 0x1);
+
+  - platform: template
+    name: ${device} BACKWARD interval
+    optimistic: true
+    turn_on_action:
+      - while:
+          condition:
+            lambda: return true;
+          then:
+            - lambda: |-
+                ESP_LOGW("INTERVAL", "BACKWARD - dur %f", id(on_duration).state);
+                queue_write_cmd(id(modbus_hub), 0x2000, 0x22);
+            - delay: !lambda "return (id(on_duration).state ?: 2) * 1000;"
+            - lambda: |-
+                ESP_LOGW("INTERVAL", "STOP - dur %f", id(off_duration).state);
+                queue_write_cmd(id(modbus_hub), 0x2000, 0x1);
+            - delay: !lambda "return (id(off_duration).state ?: 2) * 1000;"
+    turn_off_action:
+      - lambda: |-
+          ESP_LOGW("INTERVAL", "STOP");
+          queue_write_cmd(id(modbus_hub), 0x2000, 0x1);

@@ -1,0 +1,129 @@
+substitutions:
+  device: "m11"
+  slave: "156"
+  grace_period: "1s"
+
+<<: !include include/modbus_common.yaml
+
+sensor:
+  - platform: homeassistant
+    entity_id: input_number.${device}_freq
+    id: admin_freq
+    internal: true
+    on_value:
+      then:
+        - lambda: |-
+            ESP_LOGW("XXXXX", "Setting frequency to %d", uint16_t(x));
+            auto hub = id(modbus_hub);
+            auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2001, x * 100);
+            hub->queue_command(cmd);
+            id(${device}_freq).update();
+
+  - platform: modbus_controller
+    id: "motor_status"
+    name: "Motor Status"
+    address: 0x2101
+    modbus_functioncode: "read_holding_registers"
+    value_type: U_WORD
+    internal: true
+    on_value:
+      then:
+        - component.update: ${device}_state
+
+
+  - platform: modbus_controller
+    id: ${device}_freq
+    name: "${device} frequency"
+    address: 0x2102
+    unit_of_measurement: "Hz"
+    modbus_functioncode: "read_holding_registers"
+    value_type: U_WORD
+    accuracy_decimals: 0
+    filters:
+    - multiply: 0.01
+
+  - platform: modbus_controller
+    id: ${device}_current
+    name: "${device} current"
+    address: 0x2104
+    unit_of_measurement: "A"
+    modbus_functioncode: "read_holding_registers"
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.1
+
+  - platform: wifi_signal
+    name: ${device} Wifi Signal
+    update_interval: 60s
+  - platform: uptime
+    name: ${device} Uptime
+
+text_sensor:
+  - platform: template
+    id: ${device}_state
+    name: "${device} State"
+    lambda: |-
+      uint16_t status = uint16_t(id(motor_status).state) & 0x1800;
+      if (uint16_t(id(motor_status).state) == 0xFFFF) {
+        return {"UNKNOWN"};
+      } else if (status == 0x1000) {
+        return {"FORWARD"};
+      } else if (status == 0x1800) {
+        return {"BACKWARD"};
+      } else {
+        return {"STOPPED"};
+      }
+  
+  - platform: version
+    name: ${device} ESPHomelib Version
+    id: version_esphomelib
+  - platform: wifi_info
+    ip_address:
+      name: ${device} IP Address
+    ssid:
+      name: ${device} Connected SSID
+    bssid:
+      name: ${device} Connected BSSID
+            
+      
+switch:
+  - platform: template
+    name: ${device} STOP
+    lambda: |-
+      uint16_t status = uint16_t(id(motor_status).state) & 0x1800;
+      return status == 0;
+    turn_on_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "STOP PRESSED");
+        auto hub = id(modbus_hub);
+        auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x1);
+        hub->queue_command(cmd);
+        id(motor_status).update();
+
+  - platform: template
+    name: ${device} FORWARD
+    lambda: |-
+      uint16_t status = uint16_t(id(motor_status).state) & 0x1800;
+      return status == 0x1000;
+    turn_on_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "FORWARD PRESSED");
+        auto hub = id(modbus_hub);
+        auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x12);
+        hub->queue_command(cmd);
+        id(motor_status).update();
+    
+  - platform: template
+    name: ${device} BACKWARD
+    lambda: |-
+      uint16_t state = uint16_t(id(motor_status).state);
+      uint16_t status = state & 0x1800;
+      return state != 0xffff && status == 0x1800;
+    turn_on_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "BACKWARD PRESSED");
+        auto hub = id(modbus_hub);
+        auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x32);
+        hub->queue_command(cmd);
+        id(motor_status).update();

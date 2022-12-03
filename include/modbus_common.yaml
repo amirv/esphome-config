@@ -1,0 +1,32 @@
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+  includes:
+    - include/modbus_motor.h
+
+api:
+
+modbus:
+  uart_id: mod_bus
+  flow_control_pin: GPIO19
+  id: mod_bus_1
+
+modbus_controller:
+  id: modbus_hub
+  modbus_id: mod_bus_1
+  command_throttle: 100ms
+  address: ${slave}
+  update_interval: 10s
+  grace_period: ${grace_period}
+  stats:
+    - type: timeouts
+      name: ${device} timeouts
+
+uart:
+  id: mod_bus
+  rx_pin: GPIO32
+  tx_pin: GPIO33
+  baud_rate: 9600
+  stop_bits: 1

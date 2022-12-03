@@ -1,0 +1,8 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: "m10"
+  slave: "155"
+  grace_period: "5s"
+  motor: "a"

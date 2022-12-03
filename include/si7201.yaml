@@ -1,0 +1,9 @@
+sensor:
+  - platform: dht
+    model: SI7021
+    pin: GPIO14
+    humidity:
+      name: ${device} Humidity
+    temperature:
+      name: ${device} Temperature
+    update_interval: 10s

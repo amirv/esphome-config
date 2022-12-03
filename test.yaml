@@ -1,0 +1,42 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: test
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+logger:
+  level: VERBOSE
+
+sensor:
+  - platform: template
+    name: "Random Numbers"
+    id: gross_weight
+    lambda: |-
+      return rand() % 100;
+    update_interval: 15s
+    internal: false
+
+  - platform: template
+    name: ${device} Flow
+    unit_of_measurement: 'kg/s'
+    lambda: return id(gross_weight).state;
+    filters:
+      - sliding_window_moving_average:
+          window_size: 12
+          send_every: 1
+      - multiply: 60
+    internal: false
+
+number:
+  - platform: template
+    name: kuku  
+    step: 1
+    min_value: 0
+    max_value: 100
+    optimistic: true      
+    internal: false

@@ -1,0 +1,8 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: th16_air_out
+
+<<: !include include/sonoff_th16.yaml
+<<: !include include/si7201.yaml

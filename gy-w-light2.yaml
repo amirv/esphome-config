@@ -1,0 +1,5 @@
+substitutions:
+  device: w-light2
+    
+packages:
+  - gy-w-light-common.yaml

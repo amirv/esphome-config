@@ -1,0 +1,207 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: "m7"
+  slave: "152"
+  grace_period: "5s"
+
+<<: !include include/modbus_common.yaml
+
+sensor:
+  - platform: homeassistant
+    entity_id: input_number.${device}_freq
+    id: admin_freq
+    internal: true
+    on_value:
+      then:
+        - lambda: |-
+            ESP_LOGW("XXXXX", "Setting frequency to %d", uint16_t(x));
+            auto hub = id(modbus_hub);
+            auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2001, x * 100);
+            hub->queue_command(cmd);
+            id(${device}_freq).update();
+
+  - platform: homeassistant
+    entity_id: input_number.${device}_on_duration
+    id: on_duration
+
+  - platform: homeassistant
+    entity_id: input_number.${device}_off_duration
+    id: off_duration
+
+  - platform: modbus_controller
+    id: "motor_status"
+    name: "Motor Status"
+    address: 0x2100
+    offset: 2
+    modbus_functioncode: "read_holding_registers"
+    value_type: U_WORD
+    internal: false
+    on_value:
+      then:
+        - component.update: ${device}_state
+
+
+  - platform: modbus_controller
+    id: ${device}_freq
+    name: "${device} frequency"
+    address: 0x2100
+    offset: 4
+    unit_of_measurement: "Hz"
+    modbus_functioncode: "read_holding_registers"
+    value_type: U_WORD
+    accuracy_decimals: 0
+    filters:
+    - multiply: 0.01
+
+  - platform: modbus_controller
+    id: ${device}_current
+    name: "${device} current"
+    address: 0x2100
+    offset: 8
+    unit_of_measurement: "A"
+    modbus_functioncode: "read_holding_registers"
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.1
+
+  - platform: wifi_signal
+    name: ${device} Wifi Signal
+    update_interval: 60s
+  - platform: uptime
+    name: ${device} Uptime
+
+text_sensor:
+  - platform: template
+    id: ${device}_state
+    name: "${device} State"
+    lambda: |-
+      uint16_t status = uint16_t(id(motor_status).state);
+      if (status == 0xFFFF) {
+        return {"UNKNOWN"};
+      }
+
+      if ((status & 0x3) == 0x0) {
+        return {"STOPPED"};
+      }
+
+      status &= 0x1b;
+
+      if (status == 0x3) {
+        return {"FORWARD"};
+      } else if (status == 0x1b) {
+        return {"BACKWARD"};
+      } else {
+        return {"TRANSITION"};
+      }
+  
+  - platform: version
+    name: ${device} ESPHomelib Version
+    id: version_esphomelib
+  - platform: wifi_info
+    ip_address:
+      name: ${device} IP Address
+    ssid:
+      name: ${device} Connected SSID
+    bssid:
+      name: ${device} Connected BSSID
+            
+      
+switch:
+  - platform: template
+    name: ${device} STOP
+    id: stop
+    lambda: |-
+      uint16_t status = uint16_t(id(motor_status).state) & 0x3;
+      return status == 0;
+    turn_on_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "STOP PRESSED");
+        auto hub = id(modbus_hub);
+        auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x1);
+        hub->queue_command(cmd);
+        id(motor_status).update();
+
+  - platform: template
+    name: ${device} FORWARD
+    id: forward
+    lambda: |-
+      uint16_t status = uint16_t(id(motor_status).state) & 0x1b;
+      return status == 0x3;
+    turn_on_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "FORWARD PRESSED");
+        auto hub = id(modbus_hub);
+        auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x12);
+        hub->queue_command(cmd);
+        id(motor_status).update();
+    
+  - platform: template
+    name: ${device} BACKWARD
+    id: backward
+    lambda: |-
+      uint16_t status = uint16_t(id(motor_status).state) & 0x1b;
+      return status == 0x1b;
+    turn_on_action:
+      lambda: |-
+        ESP_LOGW("XXXX", "BACKWARD PRESSED");
+        auto hub = id(modbus_hub);
+        auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x22);
+        hub->queue_command(cmd);
+        id(motor_status).update();
+
+  - platform: template
+    name: ${device} FORWARD interval
+    optimistic: true
+    turn_on_action:
+      - while:
+          condition:
+            lambda: return true;
+          then:
+            - lambda: |-
+                ESP_LOGW("INTERVAL", "FORWARD - dur %f", id(on_duration).state);
+                auto hub = id(modbus_hub);
+                auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x12);
+                hub->queue_command(cmd);
+            - delay: !lambda "return (id(on_duration).state ?: 2) * 1000;"
+            - lambda: |-
+                ESP_LOGW("INTERVAL", "STOP - dur %f", id(off_duration).state);
+                auto hub = id(modbus_hub);
+                auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x1);
+                hub->queue_command(cmd);
+            - delay: !lambda "return (id(off_duration).state ?: 2) * 1000;"
+    turn_off_action:
+      - lambda: |-
+          ESP_LOGW("INTERVAL", "STOP");
+          auto hub = id(modbus_hub);
+          auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x1);
+          hub->queue_command(cmd);
+
+  - platform: template
+    name: ${device} BACKWARD interval
+    optimistic: true
+    turn_on_action:
+      - while:
+          condition:
+            lambda: return true;
+          then:
+            - lambda: |-
+                ESP_LOGW("INTERVAL", "BACKWARD - dur %f", id(on_duration).state);
+                auto hub = id(modbus_hub);
+                auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x22);
+                hub->queue_command(cmd);
+            - delay: !lambda "return (id(on_duration).state ?: 2) * 1000;"
+            - lambda: |-
+                ESP_LOGW("INTERVAL", "STOP - dur %f", id(off_duration).state);
+                auto hub = id(modbus_hub);
+                auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x1);
+                hub->queue_command(cmd);
+            - delay: !lambda "return (id(off_duration).state ?: 2) * 1000;"
+    turn_off_action:
+      - lambda: |-
+          ESP_LOGW("INTERVAL", "STOP");
+          auto hub = id(modbus_hub);
+          auto cmd = modbus_controller::ModbusCommandItem::create_write_single_command(hub, 0x2000, 0x1);
+          hub->queue_command(cmd);

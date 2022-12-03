@@ -1,0 +1,7 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: "m13"
+  slave: "157"
+  grace_period: "5s"

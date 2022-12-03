@@ -1,0 +1,7 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: ct25_25
+
+<<: !include include/ct.yaml

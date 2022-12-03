@@ -1,0 +1,22 @@
+packages:
+  - include/common.yaml
+
+Failed config
+
+api: [source include/modbus_motor_common.yaml:4]
+  
+  Component api requires component network.
+  services: 
+    - service: queue_reset
+      then: 
+        - lambda: modbus_hub->queue_clear();
+text_sensor.wifi_info: [source include/modbus_motor_common.yaml:74]
+  
+  Component text_sensor.wifi_info requires component wifi.
+  platform: wifi_info
+  ip_address: 
+    name: m8 IP Address
+  ssid: 
+    name: m8 Connected SSID
+  bssid: 
+    name: m8 Connected BSSID

@@ -1,0 +1,15 @@
+packages:
+  - include/common.yaml
+
+kuku:
+  - puku
+
+kuku:
+  - zulu
+
+kuku:
+  - z: 1
+
+packages:
+  - inc2.yaml
+  

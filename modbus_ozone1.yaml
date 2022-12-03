@@ -1,0 +1,89 @@
+packages:
+  - include/common.yaml
+
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: ozone1
+    
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+api:
+
+status_led:
+  pin:
+    number: GPIO23
+    inverted: yes
+
+uart:
+  id: mod_bus
+  rx_pin: GPIO32
+  tx_pin: GPIO33
+  baud_rate: 9600
+  stop_bits: 1
+  debug:
+    direction: BOTH
+    after:
+      bytes: 1
+
+modbus:
+  send_wait_time: 1000ms
+  uart_id: mod_bus
+  id: mod_bus_1
+  flow_control_pin:
+    number: GPIO19
+    #inverted: true
+
+modbus_controller:
+  id: modbus_hub
+  address: 12
+  modbus_id: mod_bus_1
+  command_throttle: 2000ms
+  setup_priority: -10  
+  update_interval: 10s
+
+sensor:
+  - platform: modbus_controller
+    name: "${device} test"
+    address: 0
+    register_type: holding
+    value_type: U_WORD
+    #accuracy_decimals: 2
+
+#  - platform: modbus_controller
+#    name: "${device} gas"
+#    address: 0
+#    register_type: read
+#    value_type: FP32_R
+#    accuracy_decimals: 2
+#
+#    lambda: |-
+#      ESP_LOGI("","Lambda incoming value=%f - data array size is %d",x,data.size());
+#      ESP_LOGI("","Sensor properties: adress = 0x%X, offset = 0x%X value type=%d", item->start_address, item->offset, (int)item->sensor_value_type);
+#      int i=0 ;
+#      for (auto val : data) {
+#        ESP_LOGI("","data[%d]=0x%02X (%d)", i, data[i], data[i]);
+#        i++;
+#      }
+#      return x ;    
+#
+#  - platform: modbus_controller
+#    name: "${device} temperature"
+#    unit_of_measurement: "°C"
+#    address: 1
+#    register_type: read
+#    value_type: FP32_R
+#    accuracy_decimals: 2
+#
+#  - platform: modbus_controller
+#    name: "${device} humidity"
+#    unit_of_measurement: "%"
+#    address: 2
+#    register_type: read
+#    value_type: FP32_R
+#    accuracy_decimals: 2
+

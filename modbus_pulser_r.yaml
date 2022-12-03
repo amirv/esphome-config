@@ -1,0 +1,6 @@
+packages:
+  - modbus_pulser.yaml
+
+substitutions:
+  device: modbus-pulser-r
+    

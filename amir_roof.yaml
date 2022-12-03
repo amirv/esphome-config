@@ -1,0 +1,57 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: roof
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+dallas:
+  - pin: GPIO23
+
+sensor:
+  - platform: dallas
+    address: 0xbf0621b1a1457528
+    name: "Boiler Temperature"
+
+switch:
+  - platform: template
+    name: "Boiler Switch"
+    lambda: return id(boiler_l).state || id(boiler_n).state;
+    turn_on_action:
+      - switch.turn_on: boiler_l
+      - switch.turn_on: boiler_n
+    turn_off_action:
+      - switch.turn_off: boiler_l
+      - switch.turn_off: boiler_n
+
+  - platform: gpio
+    pin: GPIO25
+    id: boiler_l
+    internal: true
+
+  - platform: gpio
+    pin: GPIO26
+    id: boiler_n
+    internal: true
+
+light:
+  - platform: binary
+    name: "Parents garden"
+    output: parents
+
+  - platform: binary
+    name: "Kids garden"
+    output: kids
+
+output:
+  - platform: gpio
+    id: parents
+    pin: GPIO27  
+
+  - platform: gpio
+    id: kids
+    pin: GPIO14  

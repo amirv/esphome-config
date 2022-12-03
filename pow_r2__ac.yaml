@@ -1,0 +1,7 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: pow_ac
+
+<<: !include include/sonoff_pow_r2.yaml

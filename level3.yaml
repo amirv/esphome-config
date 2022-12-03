@@ -1,0 +1,124 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: level3
+  interval_level: 5s
+  grove_addr: "32"
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: esp32dev
+
+  includes:
+    - grove/multi_channel_relay.cpp
+    - grove/multi_channel_relay.h
+    - grove.h
+
+status_led:
+  pin:
+    number: GPIO23
+
+i2c:
+  sda: GPIO16
+  scl: GPIO17
+  scan: True
+
+sensor:
+  - platform: template
+    name: "${device} Level 1 Raw"
+    accuracy_decimals: 3
+    unit_of_measurement: "V"
+    id: level1_raw
+
+  - platform: adc
+    pin: GPIO35
+    name: "${device} Level 1"
+    attenuation: 11db
+    update_interval: ${interval_level}
+    accuracy_decimals: 0
+    filters:
+      - calibrate_linear:
+        - 0.8 -> 0
+        - 2.5 -> 800
+      - throttle: 1s
+    unit_of_measurement: "L"
+    on_raw_value:
+      then:
+        lambda: id(level1_raw).publish_state(x);
+
+  - platform: template
+    name: "${device} Level 2 Raw"
+    accuracy_decimals: 3
+    unit_of_measurement: "V"
+    id: level2_raw
+
+  - platform: adc
+    pin: GPIO34
+    name: "${device} Level 2"
+    attenuation: 11db
+    update_interval: ${interval_level}
+    accuracy_decimals: 0
+    filters:
+      - calibrate_linear:
+        - 0.8 -> 0
+        - 0.1625 -> 430
+#        - 2.5 -> 800
+      - throttle: 1s
+    unit_of_measurement: "L"
+    on_raw_value:
+      then:
+        lambda: id(level2_raw).publish_state(x);
+
+
+switch:
+  - platform: gpio
+    pin: GPIO25
+    name: "${device} Relay 1"
+
+  - platform: gpio
+    pin: GPIO26
+    name: "${device} Relay 2"
+
+  - platform: custom
+    lambda: |-
+      auto grove = new GroveRelays(${grove_addr});
+      App.register_component(grove);
+      return {&grove->relay1, &grove->relay2, &grove->relay3, &grove->relay4};
+    switches:
+      - name: "${device} Grove 1"
+        id: grove_1
+      - name: "${device} Grove 2"
+        id: grove_2
+      - name: "${device} Grove 3"
+        id: grove_3
+      - name: "${device} Grove 4"
+        id: grove_4
+
+
+script:
+  - id: scan_i2c
+    then:
+      - lambda: scanI2CDevice(id(i2c_addr));
+
+button:
+  - platform: template
+    name: "${device} scan i2c address"
+    on_press:  
+      - script.execute: scan_i2c
+
+  - platform: template
+    name: "${device} set grove addr"
+    on_press:  
+      - lambda: |-
+          Multi_Channel_Relay mcr;
+          uint8_t addr = mcr.scanI2CDevice();
+          mcr.changeI2CAddress(addr, ${grove_addr});
+      - script.execute: scan_i2c
+
+text_sensor:
+  - platform: template
+    name: "${device} scanned i2c address"
+    id: i2c_addr
+

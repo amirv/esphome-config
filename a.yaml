@@ -1,0 +1,7 @@
+packages:
+  - include/common.yaml
+
+sensor:
+  - kuku
+  - lambda: !lambda |-
+      return motor_status_str(id(motor_status).state);

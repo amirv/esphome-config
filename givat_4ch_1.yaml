@@ -1,0 +1,79 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: "4ch-a"
+  devicename: "4cha"
+  deviceid: "4ch_a"
+
+  relay1: a
+  relay2: b
+  relay3: c
+  relay4: d
+
+  #<<: !include include/sonoff_4ch_r2.yaml
+
+esphome:
+  name: ${devicename}
+
+esp8266:
+  board: esp8285
+
+binary_sensor:
+- platform: status
+  name: ${devicename} Status
+- platform: gpio
+  pin:
+    number: GPIO0
+    mode: INPUT_PULLUP
+    inverted: True
+  name: ${devicename} Button 1
+  on_press:
+    - switch.toggle: ${relay1}
+- platform: gpio
+  pin:
+    number: GPIO9
+    mode: INPUT_PULLUP
+    inverted: True
+  name: ${devicename} Button 2
+  on_press:
+    - switch.toggle: ${relay2}
+- platform: gpio
+  pin:
+    number: GPIO10
+    mode: INPUT_PULLUP
+    inverted: True
+  name: ${devicename} Button 3
+  on_press:
+    - switch.toggle: ${relay3}
+- platform: gpio
+  pin:
+    number: GPIO14
+    mode: INPUT_PULLUP
+    inverted: True
+  name: ${devicename} Button 4
+  on_press:
+    - switch.toggle: ${relay4}
+
+switch:
+- platform: gpio
+  name: ${devicename} ${relay1}
+  pin: GPIO12
+  id: ${relay1}
+- platform: gpio
+  name: ${devicename} ${relay2}
+  pin: GPIO5
+  id: ${relay2}
+- platform: gpio
+  name: ${devicename} ${relay3}
+  pin: GPIO4
+  id: ${relay3}
+- platform: gpio
+  name: ${devicename} ${relay4}
+  pin: GPIO15
+  id: ${relay4}
+
+status_led:
+  pin:
+    number: GPIO13
+    inverted: yes

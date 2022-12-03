@@ -1,0 +1,14 @@
+packages:
+  - include/common.yaml
+
+# This is the house irrigation - not givat yoav and stuff!
+
+substitutions:
+  device: relay4ch
+
+  relay1: a
+  relay2: b
+  relay3: c
+  relay4: d
+
+<<: !include include/sonoff_4ch_r2.yaml

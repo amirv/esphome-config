@@ -1,0 +1,7 @@
+dallas:
+  - pin: GPIO14
+
+sensor:
+  - platform: dallas
+    index: 0
+    name: ${device} Temperature

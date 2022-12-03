@@ -1,0 +1,26 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: s35
+  slave: "35"
+  grace_period: "30s"
+
+<<: !include include/modbus_common.yaml
+
+sensor:
+  - platform: wifi_signal
+    name: ${device} Wifi Signal
+    update_interval: 60s
+  - platform: uptime
+    name: ${device} Uptime
+
+  - platform: modbus_controller
+    name: "${device} temperature"
+    address: 4
+    unit_of_measurement: "°C"
+    modbus_functioncode: "read_holding_registers"
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.1

@@ -1,0 +1,44 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: s40
+  slave: "40"
+  grace_period: "1s"
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+sensor:
+  - platform: wifi_signal
+    name: ${device} Wifi Signal
+    update_interval: 60s
+  - platform: uptime
+    name: ${device} Uptime
+    update_interval: 10s
+
+  - platform: modbus_controller
+    id: humidity
+    name: "${device} humidity"
+    address: 0
+    unit_of_measurement: "%"
+    modbus_functioncode: "read_holding_registers"
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.1
+
+
+  - platform: modbus_controller
+    id: temperature
+    name: "${device} temperature"
+    address: 0
+    offset: 2
+    unit_of_measurement: "°C"
+    modbus_functioncode: "read_holding_registers"
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+    - multiply: 0.1

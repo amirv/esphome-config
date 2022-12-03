@@ -1,0 +1,161 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: toilet5
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: esp32dev
+
+output:
+  - platform: ledc
+    pin: GPIO17
+    frequency: 20Hz
+    id: xypin
+
+  - platform: ledc
+    pin: GPIO18
+    frequency: 20Hz
+    id: anglepin
+
+servo:
+  - id: xy_servo
+    output: xypin
+
+  - id: angle_servo
+    output: anglepin
+
+number:
+  - platform: template
+    name: ${device} xy servo
+    min_value: 0
+    initial_value: 0
+    max_value: 2
+    step: 0.1
+    set_action:
+      then:
+        - lambda: id(xypin).set_level(1.0 * x / 20);
+          
+#        - servo.write:
+#            id: xy_servo
+#            level: !lambda 'return x / 100.0;'
+
+  - platform: template
+    name: ${device} angle servo
+    min_value: 0
+    initial_value: 0
+    max_value: 2
+    step: 0.1
+    set_action:
+      then:
+        - lambda: id(anglepin).set_level(1.0 * x / 120);
+#        - servo.write:
+#            id: angle_servo
+#            level: !lambda 'return x / 100.0;'
+
+switch:
+  - name: ${device} Pump
+    platform: gpio
+    pin: 
+      number: GPIO32
+      inverted: false
+
+  - name: ${device} RGB blue
+    platform: gpio
+    pin: 
+      number: GPIO25
+      inverted: true
+
+  - name: ${device} RGB green
+    platform: gpio
+    pin:
+      number: GPIO27
+      inverted: true
+
+  - name: ${device} RGB red
+    platform: gpio
+    pin: 
+      number: GPIO26
+      inverted: true
+
+  - name: ${device} LED light
+    platform: gpio
+    pin:
+      number: GPIO14
+      inverted: true
+    id: led_light
+
+  - name: ${device} Relay
+    platform: gpio
+    pin:
+      number: GPIO33
+      inverted: true
+
+#  - name: ${device} Deep sleep button
+#    platform: template
+#    optimistic: true
+#    on_turn_on:
+#      then:
+#        - deep_sleep.enter:
+#            id: deep_sleep_1
+#            #sleep_duration: 20min
+sensor:
+  - platform: adc
+    pin: GPIO36
+    name: ${device} Voltage dividier 1
+    update_interval: 5s  
+    accuracy_decimals: 4
+    attenuation: auto
+    id: v36
+
+  - platform: adc
+    pin: GPIO39
+    name: ${device} Voltage dividier 2
+    update_interval: 5s  
+    accuracy_decimals: 4
+    attenuation: auto
+    id: v39
+
+  - platform: template
+    name: ${device} delta
+    accuracy_decimals: 4
+    lambda: return id(v36).state - id(v39).state;
+    update_interval: 5s  
+
+  - platform: template
+    name: ${device} Calculated Current
+    accuracy_decimals: 4
+    lambda: |-
+      auto vb = 2 * id(v36).state;
+      auto vs = 2 * id(v39).state;
+      auto rs = 0.27;
+
+      return (vb-vs)/rs;
+    update_interval: 5s  
+
+deep_sleep:
+  wakeup_pin: 
+    number: GPIO13
+    inverted: true
+  id: deep_sleep_1
+
+binary_sensor:
+  - name: ${device} Momentary light switch
+    platform: gpio
+    pin: GPIO35
+    on_press:
+      then:
+        - switch.toggle: led_light
+
+  - name: ${device} Deep sleep button
+    platform: gpio
+    pin: GPIO13
+    on_press:
+      then:
+        - deep_sleep.enter:
+            id: deep_sleep_1
+            #sleep_duration: 20min
+
+

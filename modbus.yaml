@@ -1,0 +1,62 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: modbus
+
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+  includes:
+    - modbus_slave.h
+
+<<: !include include/common.yaml
+
+logger:
+
+uart:
+  - id: uart_modbus
+    rx_pin: GPIO09
+    tx_pin: GPIO10
+    baud_rate: 9600
+    stop_bits: 2
+
+binary_sensor:
+  - platform: gpio
+    pin: GPIO00
+    name: "switch1"
+    on_press:
+      - uart.write: "Hello kuku\n"
+
+  - platform: gpio
+    pin: GPIO09
+    name: "switch2"
+
+switch:
+  - platform: gpio
+    pin: GPIO12
+    name: "Relay1"
+    id: relay1
+
+web_server:
+  port: 80
+
+custom_component:
+  - lambda: |-
+      auto modbus_slave = new ModbusSlave(id(uart_modbus));
+      modbus_slave->set_address(0x11);
+      modbus_slave->add_register(0x10, id(relay1));
+      modbus_slave->add_register(0x11, id(sensor1));
+
+      return {modbus_slave};
+
+sensor:
+  - platform: adc
+    pin: GPIO32
+    name: "sensor1"
+    update_interval: 1s
+    id: sensor1
+
+status_led:
+  pin: LED

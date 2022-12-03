@@ -1,0 +1,112 @@
+packages:
+  - include/common.yaml
+
+api: null
+binary_sensor:
+- name: ${device} Status
+  platform: status
+- name: ${device} Button 1
+  on_press:
+  - switch.toggle: ${device}_${relay1}
+  pin:
+    inverted: true
+    mode: INPUT_PULLUP
+    number: GPIO0
+  platform: gpio
+- name: ${device} Button 2
+  on_press:
+  - switch.toggle: ${device}_${relay2}
+  pin:
+    inverted: true
+    mode: INPUT_PULLUP
+    number: GPIO9
+  platform: gpio
+- name: ${device} Button 3
+  on_press:
+  - switch.toggle: ${device}_${relay3}
+  pin:
+    inverted: true
+    mode: INPUT_PULLUP
+    number: GPIO10
+  platform: gpio
+- name: ${device} Button 4
+  on_press:
+  - switch.toggle: ${device}_${relay4}
+  pin:
+    inverted: true
+    mode: INPUT_PULLUP
+    number: GPIO14
+  platform: gpio
+captive_portal: null
+esphome:
+  board: esp01_1m
+  build_path: obj/${device}
+  name: ${device}
+  platform: ESP8266
+logger:
+  level: VERBOSE
+ota: null
+sensor:
+- name: ${device} Wifi Signal
+  platform: wifi_signal
+  update_interval: 60s
+- name: ${device} Uptime
+  platform: uptime
+status_led:
+  pin:
+    inverted: true
+    number: GPIO13
+substitutions:
+  device: relay4ch_a
+  relay1: relay1
+  relay2: relay2
+  relay3: relay3
+  relay4: relay4
+switch:
+- id: ${device}_${relay1}
+  name: ${device} ${relay1}
+  pin: GPIO12
+  platform: gpio
+- id: ${device}_${relay2}
+  name: ${device} ${relay2}
+  pin: GPIO5
+  platform: gpio
+- id: ${device}_${relay3}
+  name: ${device} ${relay3}
+  pin: GPIO4
+  platform: gpio
+- id: ${device}_${relay4}
+  name: ${device} ${relay4}
+  pin: GPIO15
+  platform: gpio
+- name: ${device} Restart
+  platform: restart
+text_sensor:
+- lambda: !lambda 'return {"amir-lb heads/master-0-g704dc7d-dirty Wed, 26 Oct 2022
+    16:31:49 +0300"};'
+  name: ${device} Version
+  platform: template
+- id: version_esphomelib
+  name: ${device} ESPHomelib Version
+  platform: version
+- bssid:
+    name: ${device} Connected BSSID
+  ip_address:
+    name: ${device} IP Address
+  platform: wifi_info
+  ssid:
+    name: ${device} Connected SSID
+web_server:
+  port: 80
+wifi:
+  ap:
+    password: !secret 'ap_password'
+    ssid: ${device} Hotspot
+  networks:
+  - password: !secret 'tkv_password'
+    priority: 10
+    ssid: !secret 'tkv_ssid'
+  - password: !secret 'other_password'
+    priority: 5
+    ssid: !secret 'other_ssid'
+

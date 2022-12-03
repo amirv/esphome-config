@@ -1,0 +1,95 @@
+# This file is for old pow (before R2)
+<<: !include sonoff_common.yaml
+
+# Enable logging
+logger:
+  baud_rate: 0
+
+uart:
+  rx_pin: RX
+  baud_rate: 4800
+
+binary_sensor:
+  - platform: status
+    name: ${device} Status
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    name: ${device} Button
+    on_press:
+      - switch.toggle: ${device}_fakebutton
+  - platform: template
+    name: ${device} Power in use
+    filters:
+      - delayed_off: 15s
+    lambda: |-
+      if (isnan(id(${device}_power).state)) {
+        return {};
+      } else if (id(${device}_power).state > 4) {
+        // Running
+        return true;
+      } else {
+        // Not running
+        return false;
+      }
+
+switch:
+  - platform: template
+    name: ${device} Relay
+    optimistic: true
+    id: ${device}_fakebutton
+    turn_on_action:
+    - switch.turn_on: ${device}_relay
+    - light.turn_on: ${device}_led
+    turn_off_action:
+    - switch.turn_off: ${device}_relay
+    - light.turn_off: ${device}_led
+  - platform: gpio
+    id: ${device}_relay
+    pin: GPIO12
+
+output:
+  - platform: esp8266_pwm
+    id: ${device}_blue_led
+    pin:
+      number: GPIO13
+      inverted: True
+
+light:
+  - platform: monochromatic
+    name: ${device} Blue LED
+    output: ${device}_blue_led
+    id: ${device}_led
+
+sensor:
+  - platform: hlw8012
+    sel_pin: 5
+    cf_pin: 14
+    cf1_pin: 13
+    current:
+      name: ${device} Current
+    voltage:
+      name: ${device} Voltage
+    power:
+      name: ${device} Power
+      id: ${device}_power
+      on_value_range:
+        - above: 4.0
+          then:
+            - light.turn_on: ${device}_led
+        - below: 3.0
+          then:
+            - light.turn_off: ${device}_led
+    update_interval: 5s
+    voltage_divider: ${voltage_divider}
+    current_resistor: ${current_resistor}
+
+
+  - platform: integration
+    name: "Total KWh"
+    sensor: ${device}_power
+    time_unit: h
+    restore: True
+    id: ${device}_consumption

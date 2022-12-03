@@ -1,0 +1,33 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: flow_meter
+
+
+<<: !include include/sonoff_common.yaml
+
+logger:
+
+binary_sensor:
+  - platform: status
+    name: ${device} Status
+
+sensor:
+  - platform: pulse_counter
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+    name: "Pulse Counter"
+    update_interval: 5s
+    filters:
+    - lambda: return x;
+      #- lambda: return (x / 27.0) * 60.0;
+    #unit_of_measurement: "L/hr"  
+    id: flow
+
+  - platform: integration
+    name: "Total Pulses"
+    #integration_method: right
+    sensor: flow
+    time_unit: min

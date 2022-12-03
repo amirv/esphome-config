@@ -1,0 +1,19 @@
+#!/bin/sh
+
+verfile=include/version.yaml
+
+HOST=`hostname`
+
+COMMIT=`git describe --all --long  --dirty`
+
+# get the latest commit date in the form of YYYYmmdd
+DATE=`date --rfc-email`
+
+VERSION="$HOST $COMMIT $DATE"
+
+cat <<FIN > $verfile
+text_sensor:
+  - platform: template
+    name: \${device} Version
+    lambda: !lambda return {"$VERSION"};
+FIN

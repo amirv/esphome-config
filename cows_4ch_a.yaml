@@ -1,0 +1,10 @@
+packages:
+  - include/sonoff_4ch_r2.yaml
+
+substitutions:
+  device: relay4ch_a
+
+  relay1: relay1
+  relay2: relay2
+  relay3: relay3
+  relay4: relay4

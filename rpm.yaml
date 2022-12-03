@@ -1,0 +1,38 @@
+packages:
+  - include/common.yaml
+
+substitutions:
+  device: rpm_meter
+
+
+<<: !include include/esp12e.yaml
+
+logger:
+
+binary_sensor:
+  - platform: status
+    name: ${device} Status
+
+sensor:
+  - platform: pulse_counter
+    pin:
+      # ATTENTION: there is a mistake - GPIO5 is actually GPIO4
+      number: GPIO12
+      mode: INPUT
+    name: "Pulse Counter"
+    update_interval: 5s
+    #    filters:
+    #      - lambda: return (x / 5.0) * 60.0;
+    unit_of_measurement: "rpm"  
+    id: rpm
+
+  - platform: integration
+    name: "Total Pulses"
+    sensor: rpm
+    time_unit: min
+
+status_led:
+  pin:
+    number: GPIO2
+    inverted: yes
+

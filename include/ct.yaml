@@ -1,0 +1,49 @@
+esphome:
+  name: ${device}
+  platform: ESP32
+  board: wemos_d1_mini32
+
+<<: !include common.yaml
+
+logger:
+
+sensor:
+  - platform: adc
+    pin: GPIO36
+    name: "ct1_p1"
+    update_interval: 1s
+    attenuation: 6db
+
+  - platform: adc
+    pin: GPIO39
+    name: "ct1_p2"
+    update_interval: 1s
+    attenuation: 6db
+
+  - platform: adc
+    pin: GPIO35
+    name: "ct1_p3"
+    update_interval: 1s
+    attenuation: 6db
+
+  - platform: adc
+    pin: GPIO33
+    name: "ct2_p1"
+    update_interval: 1s
+    attenuation: 6db
+
+  - platform: adc
+    pin: GPIO34
+    name: "ct2_p2"
+    update_interval: 1s
+    attenuation: 6db
+
+  - platform: adc
+    pin: GPIO32
+    name: "ct2_p3"
+    update_interval: 1s
+    attenuation: 6db
+
+status_led:
+  pin:
+    number: LED

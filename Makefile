@@ -1,46 +1,34 @@
-targets += sonoff_th16.bin
-#targets += sonoff_basic.bin
-targets += sonoff_pow.bin
-
-outputs = $(targets:%=binaries/%)
-merged=${C:%.yaml=%.merged.yaml}
 hostname ?= auto
-
 ephy3 ?= ephy3
 
-ifeq (${C},)
-	${error Must enter yaml file using C=}
-endif
+#ifeq (${C},)
+#	${error Must enter yaml file using C=}
+#endif
 
-all: $(outputs)
+all: build_modbus_s39
 
-${C}.d: ${C}
-	./scripts/yaml-merge.py $^ --deps > $@
+#VERSION=$(shell echo `hostname` `git describe --all --long  --dirty`)
 
--include ${C}.d
+#esphome = esphome -s PROJECT_NAME $2 -s PROJECT_VERSION "$(VERSION)" $1 $2
+esphome = esphome $1 $2
 
-%.merged.yaml: ${C}
-	./scripts/yaml-merge.py $^ > ${merged}
+build_%: %.yaml
+	$(call esphome, compile, $<)
 
-#modbus_s%.merged.yaml: ${C} include/modbus_common.yaml include/common.yaml
-#	scripts/mkversion
-#	./scripts/yaml-merge.py $^ include/version.yaml > ${merged}
+config_%: %.yaml
+	$(call esphome, config, $<)
 
-#modbus_m%.merged.yaml:  ${C} include/modbus_motor_common.yaml  include/modbus_common.yaml include/common.yaml
-#	scripts/mkversion
-#	./scripts/yaml-merge.py $^ include/version.yaml > ${merged}
+upload_%: %.yaml
+	$(call esphome, upload, $<)
 
-build: ${merged}
-	esphome compile  ${merged}
+run_%: %.yaml
+	$(call esphome, run, $<)
 
-config: ${merged}
-	esphome config  ${merged}
+logs_%: %.yaml
+	$(call esphome, logs, $<)
 
-remote_logs:
-	./scripts/remote  ${hostname} ${ephy3} ${merged} logs
-
-upload: ${merged}
-	esphome -v upload ${merged}
+rlogs_%: %.yaml
+	./scripts/remote ${hostname} ${ephy3} $< logs
 
 uploader: ${merged}
 	scp /home/amirv/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin /home/amirv/.platformio/packages/framework-arduinoespressif32/tools/sdk/bin/bootloader_dio_40m.bin $(ephy3):uploader/

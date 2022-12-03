@@ -1,3 +1,6 @@
+packages:
+  common: !include common.yaml
+
 esphome:
   name: ${device}
   platform: ESP32
@@ -19,10 +22,10 @@ modbus_controller:
   command_throttle: 100ms
   address: ${slave}
   update_interval: 10s
-  grace_period: ${grace_period}
-  stats:
-    - type: timeouts
-      name: ${device} timeouts
+  #grace_period: ${grace_period}
+  #stats:
+  #  - type: timeouts
+  #    name: ${device} timeouts
 
 uart:
   id: mod_bus

@@ -5,7 +5,7 @@ logger:
   baud_rate: 0
 
 substitutions:
-  device: modbus-tester
+  device: modbus-tester-oldhw
     
 esphome:
   name: ${device}
@@ -38,12 +38,12 @@ uart:
 
 switch:
   - platform: gpio
-    name: flow_control_pin
+    name: ${device} flow_control_pin
     pin:
         number: GPIO19
 
   - platform: template
-    name: tx
+    name: ${device} tx
     id: tx_enable
     optimistic: true
 

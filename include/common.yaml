@@ -1,5 +1,11 @@
+packages:
+  version: !include version.yaml
+
 esphome:
   build_path: "obj/${device}"
+  project:
+    name: ${PROJECT_NAME}
+    version: ${PROJECT_VERSION}
 
 logger:
   level: DEBUG
@@ -50,3 +56,21 @@ text_sensor:
     bssid:
       name: ${device} Connected BSSID
 
+  - platform: template
+    name: ${device} Version
+    lambda: !lambda return {"${PROJECT_VERSION}"};
+
+  - platform: template
+    name: ${device} Filename
+    lambda: !lambda return {"{CONFIG_FILE}"};
+
+dashboard_import:
+  package_import_url: github://amirv/esphome-config/${CONFIG_FILE}
+
+# Sets up Bluetooth LE (Only on ESP32) to allow the user
+# to provision wifi credentials to the device.
+esp32_improv:
+  authorizer: none
+
+# Sets up the improv via serial client for Wi-Fi provisioning
+improv_serial:

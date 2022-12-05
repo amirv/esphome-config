@@ -1,16 +1,3 @@
-packages:
-  common: !include common.yaml
-
-esphome:
-  name: ${device}
-  platform: ESP32
-  board: wemos_d1_mini32
-
-  includes:
-    - include/modbus_motor.h
-
-api:
-
 modbus:
   uart_id: mod_bus
   flow_control_pin: GPIO19
@@ -22,6 +9,7 @@ modbus_controller:
   command_throttle: 100ms
   address: ${slave}
   update_interval: 10s
+  setup_priority: -10  
   #grace_period: ${grace_period}
   #stats:
   #  - type: timeouts
@@ -33,3 +21,7 @@ uart:
   tx_pin: GPIO33
   baud_rate: 9600
   stop_bits: 1
+  debug:
+    direction: BOTH
+    after:
+      bytes: 1

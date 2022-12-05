@@ -8,7 +8,7 @@ substitutions:
     
 packages:
   modbus: !include include/modbus_common.yaml
-  #- include/common.yaml
+  board: !include include/esp32.yaml
 
 sensor:
   - platform: modbus_controller

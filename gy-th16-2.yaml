@@ -1,0 +1,15 @@
+substitutions:
+  PROJECT_NAME: amir.gy
+  CONFIG_FILE: gy-th16-2.yaml
+  PROJECT_VERSION: "1.0"
+  device: th16_2
+  hostname: th16-2
+
+packages:
+  common: !include include/common.yaml
+  th16: !include include/sonoff_th16.yaml
+  si: !include include/si7201.yaml
+  gy: !include include/gy.yaml
+
+esphome:
+  name: ${hostname}

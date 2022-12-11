@@ -1,27 +1,27 @@
 substitutions:
-  PROJECT_NAME: amir.paulee
-  CONFIG_FILE: modbus_s39.yaml
+  PROJECT_NAME: amir.gy
+  CONFIG_FILE: gy-co2.yaml
   PROJECT_VERSION: "1.0"
-  device: s39
-  slave: "39"
-  grace_period: "2s"
+  device: co2_12
+  hostname: co2-12
+  slave: "12"
     
 packages:
   modbus: !include include/modbus_common.yaml
   common: !include include/common.yaml
   board: !include include/esp32.yaml
-  paulee: !include include/paulee.yaml
+  gy: !include include/gy.yaml
 
 sensor:
   - platform: modbus_controller
-    id: temperature
-    name: "${device} temperature"
-    address: 4
+    id: co2
+    name: "${device} co2"
+    address: 0
     offset: 0
-    unit_of_measurement: "°C"
+    unit_of_measurement: "ppm"
     register_type: holding
     value_type: U_WORD
     accuracy_decimals: 1
-    filters:
-    - multiply: 0.1
 
+esphome:
+  name: ${hostname}

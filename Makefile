@@ -5,7 +5,22 @@ ephy3 ?= ephy3
 #	${error Must enter yaml file using C=}
 #endif
 
-all: build_modbus_s39
+targets-paulee += modbus_s39
+targets-paulee += level1
+targets-paulee += level2
+targets-paulee += level3
+
+targets-gy += gy-co2-12
+targets-gy += gy-co2-13
+targets-gy += gy-th16-1
+targets-gy += gy-th16-2
+
+targets-all = $(targets-gy) $(targets-paulee)
+
+all: gy paulee
+
+gy: $(targets-gy:%=build_%)
+paulee: $(targets-paulee:%=build_%)
 
 #VERSION=$(shell echo `hostname` `git describe --all --long  --dirty`)
 

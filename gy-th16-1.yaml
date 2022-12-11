@@ -1,0 +1,15 @@
+substitutions:
+  PROJECT_NAME: amir.paulee
+  CONFIG_FILE: gy-th16-1.yaml
+  PROJECT_VERSION: "1.0"
+  device: th16_1
+  hostname: th16-1
+
+packages:
+  common: !include include/common.yaml
+  th16: !include include/sonoff_th16.yaml
+  si: !include include/si7201.yaml
+  gy: !include include/gy.yaml
+
+esphome:
+  name: ${hostname}

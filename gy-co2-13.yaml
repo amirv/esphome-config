@@ -1,0 +1,27 @@
+substitutions:
+  PROJECT_NAME: amir.gy
+  CONFIG_FILE: gy-co2.yaml
+  PROJECT_VERSION: "1.0"
+  device: co2_13
+  hostname: co2-13
+  slave: "13"
+    
+packages:
+  common: !include include/common.yaml
+  modbus: !include include/modbus_common.yaml
+  board: !include include/esp32.yaml
+  gy: !include include/gy.yaml
+
+sensor:
+  - platform: modbus_controller
+    id: co2
+    name: "${device} co2"
+    address: 0
+    offset: 0
+    unit_of_measurement: "ppm"
+    register_type: holding
+    value_type: U_WORD
+    accuracy_decimals: 1
+
+esphome:
+  name: ${hostname}

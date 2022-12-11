@@ -1,6 +1,5 @@
-<<: !include sonoff_common.yaml
-
-logger:
+packages:
+  sonoff: !include sonoff_common.yaml
 
 binary_sensor:
   - platform: status
@@ -24,4 +23,4 @@ switch:
 status_led:
   pin:
     number: GPIO13
-    inverted: yes
+    inverted: no

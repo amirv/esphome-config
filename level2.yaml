@@ -1,18 +1,15 @@
-packages:
-  - include/common.yaml
-
 substitutions:
+  PROJECT_NAME: amir.paulee
+  CONFIG_FILE: level2.yaml
+  PROJECT_VERSION: "1.0"
   device: level2
   interval_level: 5s
-
-esphome:
-  name: ${device}
-  platform: ESP32
-  board: esp32dev
-
-status_led:
-  pin:
-    number: GPIO23
+    
+packages:
+  common: !include include/common.yaml
+  esp: !include include/esp32.yaml
+  board: !include include/tkv_board.yaml
+  paulee: !include include/paulee.yaml
 
 sensor:
   - platform: template
@@ -52,7 +49,7 @@ sensor:
     filters:
       - calibrate_linear:
         - 0.8 -> 0
-        - 2.5 -> 800
+        - 2.5 -> 1600 # Doubled the value since it measures the two tanks
       - throttle: 1s
     unit_of_measurement: "L"
     on_raw_value:

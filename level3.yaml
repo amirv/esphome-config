@@ -1,24 +1,22 @@
-packages:
-  - include/common.yaml
-
 substitutions:
+  PROJECT_NAME: amir.paulee
+  CONFIG_FILE: level3.yaml
+  PROJECT_VERSION: "1.0"
   device: level3
   interval_level: 5s
   grove_addr: "32"
+    
+packages:
+  common: !include include/common.yaml
+  esp: !include include/esp32.yaml
+  board: !include include/tkv_board.yaml
+  paulee: !include include/paulee.yaml
 
 esphome:
-  name: ${device}
-  platform: ESP32
-  board: esp32dev
-
   includes:
     - grove/multi_channel_relay.cpp
     - grove/multi_channel_relay.h
     - grove.h
-
-status_led:
-  pin:
-    number: GPIO23
 
 i2c:
   sda: GPIO16
@@ -65,12 +63,12 @@ sensor:
         - 0.8 -> 0
         - 0.1625 -> 430
 #        - 2.5 -> 800
+      - multiply: -1
       - throttle: 1s
     unit_of_measurement: "L"
     on_raw_value:
       then:
         lambda: id(level2_raw).publish_state(x);
-
 
 switch:
   - platform: gpio
@@ -121,4 +119,3 @@ text_sensor:
   - platform: template
     name: "${device} scanned i2c address"
     id: i2c_addr
-

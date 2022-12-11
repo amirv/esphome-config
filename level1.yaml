@@ -1,18 +1,15 @@
-packages:
-  - include/common.yaml
-
 substitutions:
+  PROJECT_NAME: amir.paulee
+  CONFIG_FILE: level1.yaml
+  PROJECT_VERSION: "1.0"
   device: level1
   interval_level: 5s
-
-esphome:
-  name: ${device}
-  platform: ESP32
-  board: esp32dev
-
-status_led:
-  pin:
-    number: GPIO23
+    
+packages:
+  common: !include include/common.yaml
+  esp: !include include/esp32.yaml
+  board: !include include/tkv_board.yaml
+  paulee: !include include/paulee.yaml
 
 sensor:
   - platform: template

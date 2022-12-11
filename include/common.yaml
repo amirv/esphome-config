@@ -9,11 +9,8 @@ logger:
 
 wifi:
   networks:
-  - ssid: !secret tkv_ssid
-    password: !secret tkv_password
-    priority: 10
-  - ssid: !secret other_ssid
-    password: !secret other_password
+  - ssid: !secret ephy_ssid
+    password: !secret ephy_password
     priority: 5
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails

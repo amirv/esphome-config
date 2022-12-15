@@ -1,0 +1,14 @@
+substitutions:
+  PROJECT_NAME: amir.paulee
+  CONFIG_FILE: sv-1.yaml
+  PROJECT_VERSION: "1.0"
+  device: sv_1
+  hostname: sv-1
+
+packages:
+  common: !include include/common.yaml
+  th16: !include include/sonoff_sv.yaml
+  paulee: !include include/paulee.yaml
+
+esphome:
+  name: ${hostname}

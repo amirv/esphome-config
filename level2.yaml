@@ -18,6 +18,7 @@ sensor:
     unit_of_measurement: "V"
     id: level1_raw
 
+  # Black Tank
   - platform: adc
     pin: GPIO35
     name: "${device} Level 1"
@@ -40,6 +41,7 @@ sensor:
     unit_of_measurement: "V"
     id: level2_raw
 
+  # Sedimentation Tank
   - platform: adc
     pin: GPIO34
     name: "${device} Level 2"
@@ -48,8 +50,8 @@ sensor:
     accuracy_decimals: 0
     filters:
       - calibrate_linear:
-        - 0.8 -> 0
-        - 2.5 -> 1600 # Doubled the value since it measures the two tanks
+        - 0.83 -> 30
+        - 3.150 -> 1800
       - throttle: 1s
     unit_of_measurement: "L"
     on_raw_value:

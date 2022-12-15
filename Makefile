@@ -48,6 +48,9 @@ rlogs_%: %.yaml
 rupload_%: build_%
 	./scripts/remote ${hostname} ${ephy3} $(@:rupload_%=%).yaml upload
 
+rsupload_%: build_%
+	./scripts/sonoff_uploader $@
+
 uploader: ${merged}
 	scp /home/amirv/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin /home/amirv/.platformio/packages/framework-arduinoespressif32/tools/sdk/bin/bootloader_dio_40m.bin $(ephy3):uploader/
 	ssh $(ephy3) ~/git/rpi/esphome/upload_uploader

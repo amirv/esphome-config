@@ -30,6 +30,7 @@ sensor:
     unit_of_measurement: "V"
     id: level1_raw
 
+  # Left Tank
   - platform: adc
     pin: GPIO35
     name: "${device} Level 1"
@@ -38,8 +39,16 @@ sensor:
     accuracy_decimals: 0
     filters:
       - calibrate_linear:
-        - 0.8 -> 0
-        - 2.5 -> 800
+        - 0.764 -> 0
+        - 0.884 -> 100
+        - 1.1 -> 200
+        - 1.38 -> 300
+        - 1.542 -> 400
+        - 1.817 -> 500
+        - 2.054 -> 600
+        - 2.295 -> 700
+        - 2.56 -> 800
+        - 2.787 -> 900
       - throttle: 1s
     unit_of_measurement: "L"
     on_raw_value:
@@ -52,6 +61,7 @@ sensor:
     unit_of_measurement: "V"
     id: level2_raw
 
+  # Right Tank
   - platform: adc
     pin: GPIO34
     name: "${device} Level 2"
@@ -60,10 +70,16 @@ sensor:
     accuracy_decimals: 0
     filters:
       - calibrate_linear:
-        - 0.8 -> 0
-        - 0.1625 -> 430
-#        - 2.5 -> 800
-      - multiply: -1
+        - 0.699 -> 0
+        - 0.875 -> 100
+        - 1.111 -> 200
+        - 1.327 -> 300
+        - 1.604 -> 400
+        - 1.802 -> 500
+        - 2.056 -> 600
+        - 2.276 -> 700
+        - 2.53 -> 800
+        - 2.754 -> 900
       - throttle: 1s
     unit_of_measurement: "L"
     on_raw_value:

@@ -2,6 +2,12 @@
 
 yaml=$1
 
-scp /home/amirv/tkv/git/rpi/config/esphome/obj/$yaml/.pioenvs/$yaml/firmware.bin ephy3:/tmp/firmware.bin
+tmpfile=`mktemp /tmp/XXXX.yaml`
+esphome config $yaml.yaml | tail -n +1 > $tmpfile
+name=`yq e .esphome.name $tmpfile`
+path=`yq e .esphome.build_path $tmpfile`
+rm $tmpfile
+
+scp $path/.pioenvs/$name/firmware.bin ephy3:/tmp/firmware.bin
 ssh ephy3 "/home/tkv/.local/bin/esptool.py --before default_reset --after hard_reset --baud 460800 --port /dev/ttyUSB0 --chip esp8266 write_flash -z --flash_size detect 0x0  /tmp/firmware.bin"
 

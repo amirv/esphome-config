@@ -1,0 +1,5 @@
+wifi:
+  networks:
+  - ssid: !secret paulee_ssid
+    password: !secret paulee_password
+    priority: 10

@@ -1,0 +1,125 @@
+substitutions:
+  PROJECT_NAME: amir.gy
+  CONFIG_FILE: gy-oz0-0-10-1.yaml
+  PROJECT_VERSION: "1.0"
+  device: ozone1
+    
+packages:
+  board: !include include/tkv_board.yaml
+  gy: !include include/gy.yaml
+  
+sensor:
+  - platform: template
+    name: "${device} Ozone Raw"
+    accuracy_decimals: 3
+    unit_of_measurement: "V"
+    id: ozone_raw
+
+  #- platform: adc
+  #  pin: GPIO34
+  #  name: "${device} Ozone"
+  #  attenuation: 11db
+  #  accuracy_decimals: 0
+  #  filters:
+  #    - calibrate_linear:
+  #      - 0 -> 0
+  #      - 3 -> 5000
+  #    - throttle: 1s
+  #  unit_of_measurement: "ppm"
+  #  update_interval: 10s
+  #  on_raw_value:
+  #    then:
+  #      lambda: id(ozone_raw).publish_state(x);
+ #
+  #- platform: dht
+  #  model: SI7021
+  #  pin: GPIO14
+  #  humidity:
+  #    name: ${device} Humidity
+  #  temperature:
+  #    name: ${device} Temperature
+  #  update_interval: 10s
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_ctrl
+    name: "${device} modbus ozone"
+    address: 0
+    register_type: read
+    value_type: FP32
+    accuracy_decimals: 2
+
+    #lambda: |-
+    #  ESP_LOGI("","Lambda incoming value=%f - data array size is %d",x,data.size());
+    #  ESP_LOGI("","Sensor properties: adress = 0x%X, offset = 0x%X value type=%d", item->start_address, item->offset, (int)item->sensor_value_type);
+    #  int i=0 ;
+    #  for (auto val : data) {
+    #    ESP_LOGI("","data[%d]=0x%02X (%d)", i, data[i], data[i]);
+    #    i++;
+    #  }
+    #  return x ;    
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_ctrl
+    name: "${device} modbus temp"
+    address: 2
+    register_type: read
+    value_type: FP32
+    accuracy_decimals: 2
+
+    #lambda: |-
+    #  ESP_LOGI("","Lambda incoming value=%f - data array size is %d",x,data.size());
+    #  ESP_LOGI("","Sensor properties: adress = 0x%X, offset = 0x%X value type=%d", item->start_address, item->offset, (int)item->sensor_value_type);
+    #  int i=0 ;
+    #  for (auto val : data) {
+    #    ESP_LOGI("","data[%d]=0x%02X (%d)", i, data[i], data[i]);
+    #    i++;
+    #  }
+    #  return x ;    
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_ctrl
+    name: "${device} modbus humidity"
+    address: 4
+    register_type: read
+    value_type: FP32
+    accuracy_decimals: 2
+
+    #lambda: |-
+    #  ESP_LOGI("","Lambda incoming value=%f - data array size is %d",x,data.size());
+    #  ESP_LOGI("","Sensor properties: adress = 0x%X, offset = 0x%X value type=%d", item->start_address, item->offset, (int)item->sensor_value_type);
+    #  int i=0 ;
+    #  for (auto val : data) {
+    #    ESP_LOGI("","data[%d]=0x%02X (%d)", i, data[i], data[i]);
+    #    i++;
+    #  }
+    #  return x ;    
+
+uart:
+  id: modbus_uart
+  #rx_pin: GPIO13
+  #tx_pin: GPIO27
+  rx_pin: GPIO16
+  tx_pin: GPIO17
+  baud_rate: 9600
+  stop_bits: 1
+  #debug:
+  #  direction: BOTH
+  #  after:
+  #    bytes: 1
+
+modbus:
+  id: modbus_comp
+  uart_id: modbus_uart
+  #flow_control_pin: GPIO19
+  send_wait_time: 200ms
+
+modbus_controller:
+  id: modbus_ctrl
+  modbus_id: modbus_comp
+  command_throttle: 100ms
+  address: 3
+  update_interval: 10s
+  setup_priority: -10  
+
+logger:
+  level: DEBUG

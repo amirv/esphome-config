@@ -1,0 +1,42 @@
+substitutions:
+  PROJECT_NAME: amir.gy
+  CONFIG_FILE: gy-oz0-0-10-2.yaml
+  PROJECT_VERSION: "1.0"
+  device: ozone2
+    
+packages:
+  board: !include include/tkv_board.yaml
+  gy: !include include/gy.yaml
+  
+sensor:
+  - platform: template
+    name: "${device} Ozone Raw"
+    accuracy_decimals: 3
+    unit_of_measurement: "V"
+    id: ozone_raw
+
+  - platform: adc
+    pin: GPIO34
+    name: "${device} Ozone"
+    attenuation: 11db
+    accuracy_decimals: 0
+    filters:
+      - calibrate_linear:
+        - 0 -> 0
+        - 3 -> 5000
+      - throttle: 1s
+    unit_of_measurement: "ppm"
+    update_interval: 10s
+    on_raw_value:
+      then:
+        lambda: id(ozone_raw).publish_state(x);
+
+  - platform: dht
+    model: SI7021
+    pin:
+      number: GPIO14
+    humidity:
+      name: ${device} Humidity
+    temperature:
+      name: ${device} Temperature
+    update_interval: 10s

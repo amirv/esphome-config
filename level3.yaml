@@ -7,8 +7,6 @@ substitutions:
   grove_addr: "32"
     
 packages:
-  common: !include include/common.yaml
-  esp: !include include/esp32.yaml
   board: !include include/tkv_board.yaml
   paulee: !include include/paulee.yaml
 

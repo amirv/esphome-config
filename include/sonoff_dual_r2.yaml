@@ -1,0 +1,29 @@
+packages:
+  common: !include common.yaml
+  sonoff: !include sonoff_common.yaml
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO10
+      mode: INPUT_PULLUP
+      inverted: True
+    name: ${device} Button
+    on_press:
+      - switch.toggle: relays
+
+switch:
+  - platform: gpio
+    name: ${device} Relay 1
+    pin: GPIO12
+    id: relay1
+
+  - platform: gpio
+    name: ${device} Relay 2
+    pin: GPIO5
+    id: relay2
+
+status_led:
+  pin:
+    number: GPIO13
+    inverted: no

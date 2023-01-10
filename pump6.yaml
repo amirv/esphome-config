@@ -1,0 +1,21 @@
+substitutions:
+  PROJECT_NAME: amir.paulee
+  CONFIG_FILE: pump6.yaml
+  PROJECT_VERSION: "1.0"
+  device: pump6
+
+packages:
+  board: !include include/sonoff_dual_r2.yaml
+  wifi: !include include/paulee.yaml
+
+switch:
+  - platform: template
+    name: "Both relays"
+    lambda: return id(relay1).state && id(relay2).state;
+    turn_on_action:
+      - switch.turn_on: relay1
+      - switch.turn_on: relay2
+    turn_off_action:
+      - switch.turn_off: relay1
+      - switch.turn_off: relay2      
+    id: relays

@@ -45,11 +45,14 @@ logs_%: %.yaml
 rlogs_%: %.yaml
 	./scripts/remote ${hostname} ${ephy3} $< logs
 
-rupload_%: build_%
+rupload_%:
 	./scripts/remote ${hostname} ${ephy3} $(@:rupload_%=%).yaml upload
 
-rsupload_%: build_%
-	./scripts/sonoff_uploader $@
+rrun_%:
+	./scripts/remote ${hostname} ${ephy3} $(@:rrun_%=%).yaml run
+
+rsupload_%:
+	./scripts/sonoff_uploader $(@:rsupload_%=%)
 
 uploader: ${merged}
 	scp /home/amirv/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin /home/amirv/.platformio/packages/framework-arduinoespressif32/tools/sdk/bin/bootloader_dio_40m.bin $(ephy3):uploader/

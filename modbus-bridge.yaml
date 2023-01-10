@@ -1,0 +1,23 @@
+substitutions:
+  PROJECT_NAME: amir.paulee
+  CONFIG_FILE: mosbus-bridge.yaml
+  PROJECT_VERSION: "1.0"
+  device: modbus
+
+packages:
+  board: !include include/tkv_board.yaml
+  customer: !include include/paulee.yaml
+  ozone_3: !include { file: modbus/ozone.yaml, vars: { addr: 3 } } 
+  ozone_17: !include { file: modbus/ozone.yaml, vars: { addr: 14 } } 
+
+uart:
+  id: modbus_uart
+  rx_pin: GPIO17
+  tx_pin: GPIO16
+  baud_rate: 9600
+  stop_bits: 1
+
+modbus:
+  id: modbus_comp
+  uart_id: modbus_uart
+  send_wait_time: 200ms

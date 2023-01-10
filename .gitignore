@@ -17,6 +17,7 @@ obj/**
 !grove/
 !serial_over_wifi/
 !scripts/
+!modbus/
 
 /workspace.code-workspace
 

@@ -1,0 +1,35 @@
+modbus_controller:
+  - id: ozone_${addr}
+    modbus_id: modbus_comp
+    command_throttle: 100ms
+    address: ${addr}
+    update_interval: 10s
+    setup_priority: -10  
+  
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: ozone_${addr}
+    name: "${device} ozone ${addr}"
+    address: 0
+    register_type: read
+    value_type: FP32
+    accuracy_decimals: 2
+    unit_of_measurement: "ppm"
+
+  - platform: modbus_controller
+    modbus_controller_id: ozone_${addr}
+    name: "${device} temp ${addr}"
+    address: 2
+    register_type: read
+    value_type: FP32
+    accuracy_decimals: 2
+    unit_of_measurement: "°C"
+
+  - platform: modbus_controller
+    modbus_controller_id: ozone_${addr}
+    name: "${device} humidity ${addr}"
+    address: 4
+    register_type: read
+    value_type: FP32
+    accuracy_decimals: 2
+    unit_of_measurement: "%"

@@ -1,17 +1,17 @@
-packages:
-  - include/common.yaml
-
 substitutions:
+  PROJECT_NAME: amir.gy
+  CONFIG_FILE: gy-oz0-0-10-1.yaml
+  PROJECT_VERSION: "1.0"
   device: faucet
   grove_addr_1: "32"
   grove_addr_2: "33"
   debounce: "100ms"
 
-esphome:
-  name: ${device}
-  platform: ESP32
-  board: esp32dev
+packages:
+  board: !include include/tkv_board.yaml
+  paulee: !include include/paulee.yaml
 
+esphome:
   includes:
     - grove/multi_channel_relay.cpp
     - grove/multi_channel_relay.h
@@ -476,7 +476,3 @@ binary_sensor:
       - script.execute: script_power_update_4
     on_release:
       - lambda: faucet_update_status(id(valve_open_4), id(valve_closed_4), id(valve_state_4));
-
-status_led:
-  pin:
-    number: GPIO23

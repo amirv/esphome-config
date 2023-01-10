@@ -6,8 +6,8 @@ void faucet_update_status(esphome::binary_sensor::BinarySensor *opened,
 			  esphome::binary_sensor::BinarySensor *closed,
 			  esphome::text_sensor::TextSensor *state,
 			  esphome::switch_::Switch *valve = nullptr,
-			  esphome::script::Script *do_open = nullptr,
-			  esphome::script::Script *do_close = nullptr)
+			  esphome::script::SingleScript<> *do_open = nullptr,
+			  esphome::script::SingleScript<> *do_close = nullptr)
 {
 	if (!opened->state && !closed->state) {
 		state->publish_state("Transit");

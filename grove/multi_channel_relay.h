@@ -107,7 +107,6 @@ class Multi_Channel_Relay {
     */
     uint8_t scanI2CDevice(void);
     void scanI2CDevice(std::vector<uint8_t> &v);
-
   private:
     int _i2cAddr;  //  This is the I2C address you want to use
     int channel_state;  // Value to save channel state
@@ -115,6 +114,7 @@ class Multi_Channel_Relay {
 
 using namespace esphome;
 
+#if 0
 static inline void scanI2CDevice(esphome::template_::TemplateTextSensor *comp)
 {
           Multi_Channel_Relay mcr;
@@ -137,6 +137,6 @@ static inline void scanI2CDevice(esphome::template_::TemplateTextSensor *comp)
 	  comp->publish_state(txt);
 
 }
-
+#endif
 
 #endif

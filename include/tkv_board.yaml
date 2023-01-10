@@ -1,4 +1,9 @@
+packages:
+  common: !include common.yaml
+  board: !include esp32.yaml
+
 status_led:
   pin:
     number: GPIO23
+    #inverted: true
     

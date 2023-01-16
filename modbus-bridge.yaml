@@ -9,6 +9,7 @@ packages:
   customer: !include include/paulee.yaml
   ozone_3: !include { file: modbus/ozone.yaml, vars: { addr: 3 } } 
   ozone_17: !include { file: modbus/ozone.yaml, vars: { addr: 14 } } 
+  temp_39: !include { file: modbus/temp.yaml, vars: { addr: 39 } } 
 
 uart:
   id: modbus_uart

@@ -7,45 +7,12 @@ substitutions:
 packages:
   board: !include include/tkv_board.yaml
   gy: !include include/gy.yaml
-  
-sensor:
-  - platform: template
-    name: "${device} Ozone Raw"
-    accuracy_decimals: 3
-    unit_of_measurement: "V"
-    id: ozone_raw
-
-  - platform: modbus_controller
-    modbus_controller_id: modbus_ctrl
-    name: "${device} ozone"
-    address: 0
-    register_type: read
-    value_type: FP32
-    accuracy_decimals: 2
-    unit_of_measurement: "ppm"
-
-  - platform: modbus_controller
-    modbus_controller_id: modbus_ctrl
-    name: "${device} temp"
-    address: 2
-    register_type: read
-    value_type: FP32
-    accuracy_decimals: 2
-    unit_of_measurement: "°C"
-
-  - platform: modbus_controller
-    modbus_controller_id: modbus_ctrl
-    name: "${device} humidity"
-    address: 4
-    register_type: read
-    value_type: FP32
-    accuracy_decimals: 2
-    unit_of_measurement: "%"
+  ozone_3: !include { file: modbus/ozone.yaml, vars: { addr: 3 } } 
 
 uart:
   id: modbus_uart
-  rx_pin: GPIO16
-  tx_pin: GPIO17
+  rx_pin: GPIO17
+  tx_pin: GPIO16
   baud_rate: 9600
   stop_bits: 1
 
@@ -53,11 +20,3 @@ modbus:
   id: modbus_comp
   uart_id: modbus_uart
   send_wait_time: 200ms
-
-modbus_controller:
-  id: modbus_ctrl
-  modbus_id: modbus_comp
-  command_throttle: 100ms
-  address: 3
-  update_interval: 10s
-  setup_priority: -10  

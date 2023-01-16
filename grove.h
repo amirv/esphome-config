@@ -62,3 +62,27 @@ class GroveRelays : public Component {
     relay4.publish_state(state & CHANNLE4_BIT);
   };
 };
+
+void scanI2CDevice(esphome::template_::TemplateTextSensor *comp)
+{
+    Multi_Channel_Relay mcr;
+	  std::vector<uint8_t> v;
+	  std::string txt = "";
+
+	  comp->publish_state("Scanning...");
+
+    mcr.scanI2CDevice(v);
+	  
+	  if (v.empty()) {
+		  txt = "No devices found";
+	  } else {
+		  txt = "addresses: ";
+		  for (uint8_t a: v) {
+			  txt += "0x" + format_hex(a) + ", ";
+		  }
+	  }
+
+	  comp->publish_state(txt);
+
+}
+

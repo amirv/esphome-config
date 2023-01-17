@@ -86,3 +86,56 @@ void scanI2CDevice(esphome::template_::TemplateTextSensor *comp)
 
 }
 
+
+void do_scan(esphome::i2c::I2CBus *bus, std::vector<uint8_t> &v)
+{
+    for (uint8_t address = 8; address < 120; address++) {
+      auto err = bus->writev(address, nullptr, 0);
+
+      ESP_LOGD("grove", "address %d err: %d", address, err);
+
+      if (err == ERROR_OK) {
+    	    v.push_back(address);
+      } else if (err == ERROR_UNKNOWN) {
+      }
+    }
+}
+
+void scanI2CDevice(esphome::i2c::I2CBus *bus, esphome::template_::TemplateTextSensor *comp) {
+    byte error = 0, address = 0, result = 0;
+	  std::vector<uint8_t> v;
+	  std::string txt = "";
+    int nDevices;
+
+	  comp->publish_state("Scanning...");
+
+    ESP_LOGD("grove", "Scanning...");
+
+    do_scan(bus, v);
+
+	  if (v.empty()) {
+		  txt = "No devices found";
+	  } else {
+		  txt = "addresses: ";
+		  for (uint8_t a: v) {
+			  txt += "0x" + format_hex(a) + ", ";
+		  }
+	  }
+
+	  comp->publish_state(txt);
+}
+
+void setI2CDevice(esphome::i2c::I2CBus *bus, uint8_t new_addr) {
+  uint8_t data[] = { CMD_SAVE_I2C_ADDR, new_addr };
+  std::vector<uint8_t> v;
+  uint8_t old_addr;
+
+  do_scan(bus, v);
+
+  if (v.size() != 1) {
+    ESP_LOGE("grove", "Don't know which old address to use");
+    return;
+  }
+
+  bus->write(v[0], data, 2, true);
+}

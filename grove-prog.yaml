@@ -1,0 +1,56 @@
+substitutions:
+  PROJECT_NAME: amir.tkv
+  CONFIG_FILE: grove-prog.yaml
+  PROJECT_VERSION: "1.0"
+  device: programmer
+  debounce: "100ms"
+
+packages:
+  board: !include include/tkv_board.yaml
+  paulee: !include include/paulee.yaml
+
+esphome:
+  includes:
+    - grove/multi_channel_relay.cpp
+    - grove/multi_channel_relay.h
+    - grove.h
+  libraries:
+    - Wire
+
+i2c:
+  sda: GPIO16
+  scl: GPIO17
+  scan: True
+  id: bus_a
+
+script:
+  - id: scan_i2c
+    then:
+      - lambda: scanI2CDevice(id(bus_a), id(scanned_addr));
+
+button:
+  - platform: template
+    name: "${device} Scan i2c Address"
+    on_press:  
+      - script.execute: scan_i2c
+
+  - platform: template
+    name: "${device} Set Grove Address"
+    on_press:  
+      - lambda: setI2CDevice(id(bus_a), id(new_addr).state);
+      - script.execute: scan_i2c
+
+text_sensor:
+  - platform: template
+    name: "${device} scanned i2c address"
+    id: scanned_addr
+
+number:
+  - name: ${device} New Address
+    platform: template
+    id: new_addr
+    min_value: 0
+    max_value: 255
+    step: 1
+    optimistic: true
+    mode: box

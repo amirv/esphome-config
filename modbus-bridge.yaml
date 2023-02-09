@@ -7,9 +7,21 @@ substitutions:
 packages:
   board: !include include/tkv_board.yaml
   customer: !include include/paulee.yaml
-  ozone_3: !include { file: modbus/ozone.yaml, vars: { addr: 3 } } 
-  ozone_17: !include { file: modbus/ozone.yaml, vars: { addr: 14 } } 
-  temp_39: !include { file: modbus/temp.yaml, vars: { addr: 39 } } 
+
+  #ozone_3: !include { file: modbus/ozone.yaml, vars: { addr: 3 } } 
+  #ozone_17: !include { file: modbus/ozone.yaml, vars: { addr: 14 } } 
+  #temp_39: !include { file: modbus/temp.yaml, vars: { addr: 39 } } 
+#
+  temp_30: !include { file: modbus/temp.yaml, vars: { addr: 30 } } 
+  temp_31: !include { file: modbus/temp.yaml, vars: { addr: 31 } } 
+  temp_32: !include { file: modbus/temp.yaml, vars: { addr: 32 } } 
+  temp_33: !include { file: modbus/temp.yaml, vars: { addr: 33 } } 
+  temp_35: !include { file: modbus/temp.yaml, vars: { addr: 35 } } 
+  temp_36: !include { file: modbus/temp.yaml, vars: { addr: 36 } } 
+  temp_37: !include { file: modbus/temp.yaml, vars: { addr: 37 } } 
+  temp_38: !include { file: modbus/temp.yaml, vars: { addr: 38 } } 
+
+  #motor_154: !include { file: modbus/motor.yaml, vars: { addr: 154 } } 
 
 uart:
   id: modbus_uart
@@ -22,3 +34,4 @@ modbus:
   id: modbus_comp
   uart_id: modbus_uart
   send_wait_time: 200ms
+

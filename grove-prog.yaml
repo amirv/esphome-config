@@ -14,8 +14,8 @@ esphome:
     - grove/multi_channel_relay.cpp
     - grove/multi_channel_relay.h
     - grove.h
-  libraries:
-    - Wire
+#  libraries:
+#    - Wire
 
 i2c:
   sda: GPIO16

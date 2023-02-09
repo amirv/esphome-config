@@ -1,0 +1,5 @@
+wifi:
+  networks:
+  - ssid: !secret office_ssid
+    password: !secret office_password
+    priority: 10

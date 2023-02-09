@@ -31,6 +31,10 @@ switch:
   - platform: restart
     name: ${device} Restart
 
+button:
+  - platform: safe_mode
+    name: "${device} Safe Mode"
+
 sensor:
   - platform: wifi_signal
     name: ${device} Wifi Signal

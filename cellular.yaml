@@ -1,23 +1,48 @@
-packages:
-  - include/common.yaml
-
 substitutions:
+  PROJECT_NAME: amir.paulee
+  CONFIG_FILE: cellular.yaml
+  PROJECT_VERSION: "1.0"
   device: cellular
 
-esphome:
-  name: ${device}
-  platform: ESP32
-  board: wemos_d1_mini32
+packages:
+  board: !include include/tkv_board.yaml
+  customer: !include include/paulee.yaml
 
 uart:
-  baud_rate: 9600
-  tx_pin: GPIO17
-  rx_pin: GPIO18
+  - baud_rate: 115200
+    id: sim_uart
+    tx_pin: GPIO17
+    rx_pin: GPIO16
+    debug:
+      direction: BOTH
+      after:
+        delimiter: "\n"
+      sequence:
+        - lambda: UARTDebug::log_string(direction, bytes);
 
-logger:
-  #baud_rate: 0 # disable uart logger on esp 8266    
+sim800l:
+  uart_id: sim_uart
+  on_sms_received:
+    - logger.log:
+        format: "Received '%s' from %s"
+        args: [ 'message.c_str()', 'sender.c_str()' ]
+    - lambda: |-
+        id(sms_sender).publish_state(sender);
+        id(sms_message).publish_state(message);
+  on_incoming_call:
+    - logger.log:
+        format: "Incoming call from '%s'"
+        args: ["caller_id.c_str()"]
 
+sensor:
+  - platform: sim800l
+    rssi:
+      name: "Sim800L RSSI"
 
+binary_sensor:
+  - platform: sim800l
+    registered:
+      name: "Sim800L Registered"
 
 api:
   services:
@@ -46,16 +71,10 @@ text_sensor:
     id: sms_message
     name: "Sms Message"
 
-sim800l:
-  on_sms_received:
-    - logger.log:
-        format: "Received '%s' from %s"
-        args: [ 'message.c_str()', 'sender.c_str()' ]
-
-#    - lambda: |-
-#        if ( (id(sms_sender).state == "+79991234567") && ( (id(sms_message).state == "relay_1_on") OR (id(sms_message).state == "Relay_1_on") ) ) {
-#              id(relay_1).turn_on();
-#              }    
-    - lambda: |-
-        id(sms_sender).publish_state(sender);
-        id(sms_message).publish_state(message);
+logger:
+  level: VERBOSE
+  logs:
+    json: DEBUG
+    mdns: DEBUG
+    improv_serial: DEBUG
+  #  sim800l: VERBOSE

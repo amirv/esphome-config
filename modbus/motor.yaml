@@ -1,0 +1,120 @@
+modbus_controller:
+  - id: motor_${addr}
+    modbus_id: modbus_comp
+    command_throttle: 100ms
+    address: ${addr}
+    update_interval: 10s
+    setup_priority: -10  
+
+binary_sensor:
+#  Address 0x2101:
+# BIT5: 0 Standard status, 1 fault status
+# BIT11: 0 forward running stats, 1 reverse
+# running status
+# BIT12: 0 stop, 1 running
+# BIT13: JOP commend
+
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    name: "${device} fault ${addr}"
+    address: 0x2101
+    register_type: holding
+    bitmask: 0x10
+
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    name: "${device} forward ${addr}"
+    address: 0x2101
+    register_type: holding
+    bitmask: 0x10
+
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    name: "${device} backward ${addr}"
+    address: 0x2101
+    register_type: holding
+    bitmask: 0x17
+
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    name: "${device} running ${addr}"
+    address: 0x2101
+    lambda: |-
+      if (data.size() < 2) {
+        ESP_LOGD("Modbus Sensor Lambda","XXXXXXXXXXXXXXXXXXXXX len: %d", data.size());
+        return NAN;
+      }
+
+      ESP_LOGD("Modbus Sensor Lambda","ZZZZZZZZZZZZZZZZZZZZZZZZ data %#x %#x len: %d", data[0], data[1], data.size());
+      return !!data[0];
+    register_type: holding
+    #bitmask: 0x800
+
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    name: "${device} JDP ${addr}"
+    address: 0x2101
+    register_type: holding
+    bitmask: 0x10000
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    name: "${device} status ${addr}"
+    address: 0x2101
+    register_type: holding
+    value_type: U_WORD
+      
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    id: freq_get_${addr}
+    name: "${device} frequency ${addr}"
+    address: 0x2102
+    register_type: holding
+    value_type: U_WORD
+    accuracy_decimals: 1
+    unit_of_measurement: "HZ"
+    filters:
+      - multiply: .01
+      
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    name: "${device} current ${addr}"
+    id: current_${addr}
+    address: 0x2104
+    register_type: holding
+    value_type: U_WORD
+    accuracy_decimals: 1
+    unit_of_measurement: "A"
+    filters:
+      - multiply: .1
+
+number:
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    name: ${device} set frequency ${addr}
+    address: 0x2102
+    value_type: U_WORD
+    lambda: "return  id(freq_get_${addr}).state; "
+    write_lambda: |-
+      ESP_LOGD("main","Modbus Number incoming value = %f",x);
+      uint16_t freq = x * 100 ;
+      payload.push_back(freq);
+      return x * 1.0 ;
+    ## multiply is ignored because lamdba is used
+    multiply: 1.0
+    min_value: 0
+    max_value: 50
+    step: 1
+    mode: box
+
+select:
+  - platform: modbus_controller
+    modbus_controller_id: motor_${addr}
+    name: ${device} direction ${addr}
+    address: 0x2000
+    value_type: U_WORD
+    optionsmap:
+      "Forward": 0x12
+      "Backward": 0x13
+      "Stop": 0x1

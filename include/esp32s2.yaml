@@ -1,0 +1,9 @@
+esphome:
+    name: ${device}
+    platform: ESP32
+    board: esp32-s2-saola-1
+  
+# Sets up Bluetooth LE (Only on ESP32) to allow the user
+# to provision wifi credentials to the device.
+esp32_improv:
+  authorizer: none
